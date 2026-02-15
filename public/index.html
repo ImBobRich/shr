@@ -150,6 +150,14 @@
         .horse {
             font-size: 48px;
             filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+            transform: scaleX(-1); /* Разворачиваем лошадь */
+            animation: gallop 0.3s steps(2) infinite; /* Анимация галопа */
+        }
+
+        @keyframes gallop {
+            0% { transform: scaleX(-1) translateY(0px); }
+            50% { transform: scaleX(-1) translateY(-5px); }
+            100% { transform: scaleX(-1) translateY(0px); }
         }
 
         .team-label {
