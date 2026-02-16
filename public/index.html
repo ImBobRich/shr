@@ -858,19 +858,6 @@
                     if (currentView === 'player') {
                         document.getElementById('waitingMessage').style.display = 'none';
                         document.getElementById('racingMessage').style.display = 'block';
-                        
-                        // Блокировать прокрутку и случайные касания
-                        document.body.style.overflow = 'hidden';
-                        document.body.style.position = 'fixed';
-                        document.body.style.width = '100%';
-                        
-                        // Предотвратить закрытие страницы случайным свайпом
-                        const preventSwipe = (e) => {
-                            if (gameState && gameState.gameStatus === 'racing') {
-                                e.preventDefault();
-                            }
-                        };
-                        document.addEventListener('touchmove', preventSwipe, { passive: false });
                     }
                     break;
 
@@ -972,6 +959,41 @@
             // Start game button
             document.getElementById('startGameBtn').addEventListener('click', startRace);
 
+            // Блокировка случайных действий только на зоне тряски
+            const shakeZone = document.getElementById('shakeZone');
+            
+            // Отключить контекстное меню на долгое нажатие
+            shakeZone.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                return false;
+            });
+            
+            // Отключить выделение текста
+            shakeZone.addEventListener('selectstart', (e) => {
+                e.preventDefault();
+                return false;
+            });
+            
+            let clickInterval = null;
+```
+
+---
+
+## ПРОСТОЕ РЕШЕНИЕ БЕЗ РИСКОВ:
+
+Если хотите минимум изменений - просто оставьте:
+
+1. **CSS класс `.no-touch`** - он уже работает
+2. **Удалите** всё про `touchmove` и блокировку body
+3. **Оставьте** только кнопку "Вернуться в игру"
+
+---
+
+## ⚡ БЫСТРЫЙ COMMIT:
+
+Замените `case 'race_started'` на простую версию (без блокировки body) и закоммитьте:
+```
+Fix: Remove touch blocking that caused freeze
             // Shake zone interaction
             const shakeZone = document.getElementById('shakeZone');
             let clickInterval = null;
