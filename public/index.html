@@ -754,6 +754,15 @@
             switch (data.type) {
                 case 'game_state':
                 case 'settings_updated':
+                    gameState = data.state;
+                    updateDisplay();
+                    
+                    // Если игрок на экране регистрации - обновить список столов
+                    if (currentView === 'player' && !currentPlayerId) {
+                        updateTeamSelect();
+                    }
+                    break;
+                    
                 case 'game_reset':
                     gameState = data.state;
                     
