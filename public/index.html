@@ -1035,10 +1035,28 @@
         }
 
         // Reset Game
+        // Reset Game
         function resetGame() {
             if (confirm('Вы уверены, что хотите сбросить игру? Все данные будут удалены.')) {
                 if (ws && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({ type: 'reset_game' }));
+                    
+                    // Локально тоже сбросить главный экран
+                    setTimeout(() => {
+                        gameState.gameStatus = 'registration';
+                        gameState.winner = null;
+                        
+                        // Скрыть экран победителя
+                        document.getElementById('winnerScreen').style.display = 'none';
+                        
+                        // Скрыть экран гонки
+                        document.getElementById('raceScreen').style.display = 'none';
+                        
+                        // Показать стартовый экран
+                        document.getElementById('startScreen').style.display = 'flex';
+                        
+                        console.log('Main screen reset to start');
+                    }, 100);
                 }
             }
         }
