@@ -858,6 +858,19 @@
                     if (currentView === 'player') {
                         document.getElementById('waitingMessage').style.display = 'none';
                         document.getElementById('racingMessage').style.display = 'block';
+                        
+                        // Блокировать прокрутку и случайные касания
+                        document.body.style.overflow = 'hidden';
+                        document.body.style.position = 'fixed';
+                        document.body.style.width = '100%';
+                        
+                        // Предотвратить закрытие страницы случайным свайпом
+                        const preventSwipe = (e) => {
+                            if (gameState && gameState.gameStatus === 'racing') {
+                                e.preventDefault();
+                            }
+                        };
+                        document.addEventListener('touchmove', preventSwipe, { passive: false });
                     }
                     break;
 
@@ -875,6 +888,11 @@
                     if (currentView === 'display') {
                         showWinner(data.winner);
                     } else if (currentView === 'player') {
+                        // Разблокировать экран
+                        document.body.style.overflow = '';
+                        document.body.style.position = '';
+                        document.body.style.width = '';
+                        
                         // Показать победителя игрокам
                         alert(`🏆 ПОБЕДИТЕЛЬ! 🏆\n\nКоманда: ${data.winner.name}\n\nПоздравляем!`);
                     }
@@ -1222,6 +1240,32 @@
             }
         }
 
+        // Return to game (if accidentally left)
+        function returnToGame() {
+            // Просто скрыть кнопку, игра продолжается
+            document.getElementById('backToGameBtn').style.display = 'none';
+            
+            // Можно добавить вибрацию для подтверждения
+            if (navigator.vibrate) {
+                navigator.vibrate(100);
+            }
+        }
+
+        // Detect if user left the page
+        let pageHidden = false;
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                pageHidden = true;
+            } else {
+                // Вернулись на страницу
+                if (pageHidden && currentPlayerId && gameState && gameState.gameStatus === 'racing') {
+                    // Показать кнопку возврата
+                    document.getElementById('backToGameBtn').style.display = 'block';
+                    pageHidden = false;
+                }
+            }
+        });
+        
         // Start Shake Detection
         function startShakeDetection() {
             if (window.DeviceMotionEvent) {
