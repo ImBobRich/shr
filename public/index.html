@@ -528,6 +528,30 @@
             background: #27ae60;
         }
 
+        /* Блокировка случайных нажатий */
+        .no-touch {
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .back-to-game-button {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .back-to-game-button:hover {
+            background: #c0392b;
+        }
+        
         @media (max-width: 768px) {
             .game-title {
                 font-size: 40px;
@@ -629,10 +653,11 @@
                 </div>
 
                 <div id="racingMessage" class="racing-message" style="display: none;">
-                    🏁 ГОНКА НАЧАЛАСЬ!
+                    🏁 ГОНКА НАЧАЛАСЬ!<br>
+                    <span style="font-size: 14px;">💡 Экран заблокирован от случайных нажатий</span>
                 </div>
                 
-                <div class="shake-zone" id="shakeZone">
+                <div class="shake-zone no-touch" id="shakeZone">
                     <div>🏇<br>ТРЯСИ!</div>
                 </div>
                 
@@ -647,6 +672,10 @@
                 <div style="margin-top: 20px; font-size: 16px; color: #7f8c8d;">
                     Активных игроков: <span id="activePlayersCount">0</span>
                 </div>
+                
+                <button class="back-to-game-button" id="backToGameBtn" style="display: none;" onclick="returnToGame()">
+                    ⬅️ Вернуться в игру
+                </button>
             </div>
         </div>
     </div>
