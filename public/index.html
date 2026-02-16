@@ -766,16 +766,16 @@
                 case 'game_reset':
                     gameState = data.state;
                     
-                    // Скрыть экран победителя
+                    // Скрыть экран победителя везде
                     document.getElementById('winnerScreen').style.display = 'none';
                     
-                    // Вернуться на стартовый экран
+                    // ГЛАВНЫЙ ЭКРАН: вернуться на стартовую страницу
                     if (currentView === 'display') {
                         document.getElementById('raceScreen').style.display = 'none';
                         document.getElementById('startScreen').style.display = 'flex';
                     }
                     
-                    // Сбросить игрока полностью
+                    // ИГРОКИ: полный сброс
                     if (currentView === 'player') {
                         // Сбросить ID игрока
                         currentPlayerId = null;
@@ -794,10 +794,13 @@
                         document.getElementById('readyBtn').disabled = true;
                         
                         // Сбросить сообщения
-                        document.getElementById('waitingMessage').style.display = 'block';
-                        document.getElementById('racingMessage').style.display = 'none';
+                        const waitingMsg = document.getElementById('waitingMessage');
+                        const racingMsg = document.getElementById('racingMessage');
+                        if (waitingMsg) waitingMsg.style.display = 'block';
+                        if (racingMsg) racingMsg.style.display = 'none';
                     }
                     
+                    // Обновить отображение для всех
                     updateDisplay();
                     break;
 
@@ -828,7 +831,15 @@
                     break;
 
                 case 'race_finished':
-                    showWinner(data.winner);
+                    gameState.gameStatus = 'finished';
+                    gameState.winner = data.winner;
+                    
+                    if (currentView === 'display') {
+                        showWinner(data.winner);
+                    } else if (currentView === 'player') {
+                        // Показать победителя игрокам
+                        alert(`🏆 ПОБЕДИТЕЛЬ! 🏆\n\nКоманда: ${data.winner.name}\n\nПоздравляем!`);
+                    }
                     break;
 
                 case 'error':
@@ -1218,6 +1229,59 @@
         }
         // Update Team Select
         function updateTeamSelect() {
+            if (!gameState || !gameState.teams) return;
+            
+            const select = document.getElementById('teamSelect');
+            if (!select) return;
+            
+            console.log('Updating team select, numTeams:', gameState.settings.numTeams); // Для отладки
+            
+            select.innerHTML = '<option value="">-- Выберите стол --</option>';
+            
+            for (let i = 1; i <= gameState.settings.numTeams; i++) {
+                const team = gameState.teams[i];
+                if (!team) {
+                    console.log('Team', i, 'not found'); // Для отладки
+                    continue;
+                }
+                
+                const playerCount = team.players ? team.players.length : 0;
+                const maxPlayers = gameState.settings.maxPlayers;
+                const disabled = playerCount >= maxPlayers;
+                
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Стол ${i}${team.name ? ' - ' + team.name : ''} (${playerCount}/${maxPlayers})`;
+                option.disabled = disabled;
+                select.appendChild(option);
+                
+                console.log('Added team option:', i, option.textContent); // Для отладки
+            }
+        }
+        // Update Display
+        // Update Display
+        function updateDisplay() {
+            if (!gameState) return;
+
+            // Update team select
+            updateTeamSelect();
+            
+            // Update start button
+            const registeredCount = Object.values(gameState.teams).filter(t => t.players.length > 0).length;
+            document.getElementById('registeredTeams').textContent = registeredCount;
+            document.getElementById('startGameBtn').disabled = registeredCount < gameState.settings.minTeams;
+
+            // Update admin settings
+            if (currentView === 'admin') {
+                document.getElementById('numTeams').value = gameState.settings.numTeams;
+                document.getElementById('maxPlayers').value = gameState.settings.maxPlayers;
+                document.getElementById('minTeams').value = gameState.settings.minTeams;
+                document.getElementById('speedCoef').value = gameState.settings.speedCoef;
+            }
+        }
+
+        // Update Team Select
+        function updateTeamSelect() {
             if (!gameState) return;
             
             const select = document.getElementById('teamSelect');
@@ -1229,27 +1293,6 @@
                 const team = gameState.teams[i];
                 if (!team) continue;
                 
-                const playerCount = team.players.length;
-                const maxPlayers = gameState.settings.maxPlayers;
-                const disabled = playerCount >= maxPlayers;
-                
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = `Стол ${i}${team.name ? ' - ' + team.name : ''} (${playerCount}/${maxPlayers})`;
-                option.disabled = disabled;
-                select.appendChild(option);
-            }
-        }
-        // Update Display
-        function updateDisplay() {
-            if (!gameState) return;
-
-            // Update team select
-            const select = document.getElementById('teamSelect');
-            select.innerHTML = '<option value="">-- Выберите стол --</option>';
-            
-            for (let i = 1; i <= gameState.settings.numTeams; i++) {
-                const team = gameState.teams[i];
                 const playerCount = team.players.length;
                 const maxPlayers = gameState.settings.maxPlayers;
                 const disabled = playerCount >= maxPlayers;
