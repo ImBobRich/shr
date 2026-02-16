@@ -785,18 +785,32 @@
         function handleServerMessage(data) {
             switch (data.type) {
                case 'game_state':
+                    console.log('=== GAME STATE RECEIVED ===');
+                    console.log('Current view:', currentView);
+                    console.log('Data:', data);
+                    
                     gameState = data.state;
-                    console.log('Received game_state:', gameState);
+                    
+                    // КРИТИЧНО: Проверить что данные корректны
+                    if (!gameState || !gameState.settings || !gameState.teams) {
+                        console.error('Invalid game state received!', gameState);
+                        return;
+                    }
+                    
+                    console.log('Game state valid:', gameState.settings.numTeams, 'teams');
                     
                     // Обновить отображение
                     updateDisplay();
                     
-                    // Если игрок - обновить список столов
+                    // Если игрок - принудительно обновить список столов несколько раз
                     if (currentView === 'player') {
-                        setTimeout(() => {
-                            updateTeamSelect();
-                        }, 100);
+                        console.log('Player view - forcing team select update');
+                        updateTeamSelect(); // Сразу
+                        setTimeout(() => updateTeamSelect(), 100); // Через 100мс
+                        setTimeout(() => updateTeamSelect(), 500); // Через 500мс на всякий случай
                     }
+                    
+                    console.log('=== GAME STATE PROCESSED ===');
                     break;
                     
                 case 'settings_updated':
@@ -820,23 +834,39 @@
                     
                     gameState = data.state;
                     
-                    // Сброс экранов для ВСЕХ
+                    // КРИТИЧНО: Проверить что данные корректны
+                    if (!gameState || !gameState.settings || !gameState.teams) {
+                        console.error('Invalid game state after reset!');
+                        // Перезагрузить страницу в крайнем случае
+                        setTimeout(() => window.location.reload(), 1000);
+                        return;
+                    }
+                    
+                    // Сброс экранов для ВСЕХ (особенно для display)
                     const winnerScreen = document.getElementById('winnerScreen');
                     const raceScreen = document.getElementById('raceScreen');
                     const startScreen = document.getElementById('startScreen');
                     
-                    if (winnerScreen) winnerScreen.style.display = 'none';
-                    if (raceScreen) raceScreen.style.display = 'none';
-                    if (startScreen) startScreen.style.display = 'flex';
-                    
-                    console.log('Screens reset - winner hidden, race hidden, start shown');
+                    console.log('Resetting screens...');
+                    if (winnerScreen) {
+                        winnerScreen.style.display = 'none';
+                        console.log('Winner screen hidden');
+                    }
+                    if (raceScreen) {
+                        raceScreen.style.display = 'none';
+                        console.log('Race screen hidden');
+                    }
+                    if (startScreen) {
+                        startScreen.style.display = 'flex';
+                        console.log('Start screen shown');
+                    }
                     
                     // ИГРОКИ - перезагрузить страницу
                     if (currentView === 'player') {
-                        console.log('Player view - will reload');
+                        console.log('Player view - reloading page');
                         alert('Игра сброшена! Страница перезагрузится.');
-                        setTimeout(() => window.location.reload(), 1000);
-                        return; // Не продолжаем выполнение
+                        setTimeout(() => window.location.reload(), 500);
+                        return;
                     }
                     
                     // Обновить для всех остальных
@@ -844,7 +874,6 @@
                     
                     console.log('=== GAME RESET COMPLETE ===');
                     break;
-
                 case 'player_registered':
                     currentPlayerId = data.playerId;
                     currentTeamId = data.teamId;
@@ -1436,13 +1465,10 @@ Fix: Remove touch blocking that caused freeze
                 } else if (view === 'admin') {
                     ws.send(JSON.stringify({ type: 'register_admin' }));
                 } else if (view === 'player') {
-                    // Для игрока - обновить список столов
-                    setTimeout(() => {
-                        console.log('Player view opened, updating team select');
-                        if (gameState) {
-                            updateTeamSelect();
-                        }
-                    }, 500);
+                    console.log('=== PLAYER VIEW OPENED ===');
+                    // Запросить состояние с сервера
+                    ws.send(JSON.stringify({ type: 'request_state' }));
+                    console.log('Requested game state from server');
                 }
             }
         }
