@@ -85,8 +85,17 @@ wss.on('connection', (ws) => {
     let playerId = null;
 
     ws.on('message', (message) => {
-        try {
-            const data = JSON.parse(message);
+            try {
+                const data = JSON.parse(message);
+                
+                // НОВОЕ: Если игрок запрашивает состояние
+                if (data.type === 'request_state' && clientType === null) {
+                    ws.send(JSON.stringify({
+                        type: 'game_state',
+                        state: gameState
+                    }));
+                    return;
+                }
             
             switch (data.type) {
                 case 'register_display':
