@@ -775,11 +775,25 @@
                         document.getElementById('startScreen').style.display = 'flex';
                     }
                     
-                    // Сбросить форму игрока
-                    if (currentView === 'player' && currentPlayerId) {
+                    // Сбросить игрока полностью
+                    if (currentView === 'player') {
+                        // Сбросить ID игрока
                         currentPlayerId = null;
+                        currentTeamId = null;
+                        
+                        // Скрыть экран управления
                         document.getElementById('controlScreen').style.display = 'none';
+                        
+                        // Показать форму регистрации
                         document.getElementById('registrationForm').style.display = 'block';
+                        
+                        // Сбросить выбор команды
+                        document.getElementById('teamSelect').value = '';
+                        document.getElementById('teamNameGroup').style.display = 'none';
+                        document.getElementById('existingTeamName').style.display = 'none';
+                        document.getElementById('readyBtn').disabled = true;
+                        
+                        // Сбросить сообщения
                         document.getElementById('waitingMessage').style.display = 'block';
                         document.getElementById('racingMessage').style.display = 'none';
                     }
@@ -1202,7 +1216,30 @@
                 }));
             }
         }
-
+        // Update Team Select
+        function updateTeamSelect() {
+            if (!gameState) return;
+            
+            const select = document.getElementById('teamSelect');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">-- Выберите стол --</option>';
+            
+            for (let i = 1; i <= gameState.settings.numTeams; i++) {
+                const team = gameState.teams[i];
+                if (!team) continue;
+                
+                const playerCount = team.players.length;
+                const maxPlayers = gameState.settings.maxPlayers;
+                const disabled = playerCount >= maxPlayers;
+                
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Стол ${i}${team.name ? ' - ' + team.name : ''} (${playerCount}/${maxPlayers})`;
+                option.disabled = disabled;
+                select.appendChild(option);
+            }
+        }
         // Update Display
         function updateDisplay() {
             if (!gameState) return;
