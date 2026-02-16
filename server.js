@@ -17,7 +17,7 @@ const gameState = {
         maxPlayers: 3,
         minTeams: 1,
         speedCoef: 1,
-        baseSpeed: 1000 / 90
+        baseSpeed: 1000 / 330
     },
     teams: {},
     players: {},
