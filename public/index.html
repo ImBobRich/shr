@@ -450,8 +450,29 @@
             margin-top: 20px;
         }
 
+
         .back-button:hover {
             background: #7f8c8d;
+        }
+        .save-button {
+            padding: 12px 30px;
+            font-size: 18px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            margin-right: 10px;
+        }
+        .save-button:hover {
+            background: #229954;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
         }
 
         .connection-status {
@@ -636,7 +657,7 @@
         
         <div class="setting-group">
             <div class="setting-label">Количество столов / команд:</div>
-            <input type="number" class="setting-input" id="numTeams" min="2" max="12" value="7">
+            <input type="number" class="setting-input" id="numTeams" min="1" max="12" value="7">
             <div class="setting-value">По умолчанию: 7</div>
         </div>
         
@@ -648,7 +669,7 @@
         
         <div class="setting-group">
             <div class="setting-label">Минимум команд для старта:</div>
-            <input type="number" class="setting-input" id="minTeams" min="2" max="12" value="2">
+            <input type="number" class="setting-input" id="minTeams" min="1" max="12" value="2">
             <div class="setting-value">По умолчанию: 2</div>
         </div>
         
@@ -658,8 +679,11 @@
             <div class="setting-value">По умолчанию: 1 (финиш за ~30 сек при активном встряхивании)</div>
         </div>
         
-        <button class="back-button" onclick="showView('display')">Вернуться к главному экрану</button>
-        <button class="back-button" onclick="resetGame()" style="background: #e74c3c; margin-left: 10px;">Сбросить игру</button>
+        <div class="button-group">
+            <button class="save-button" onclick="saveSettings()">💾 Сохранить параметры</button>
+            <button class="back-button" onclick="showView('display')">Вернуться к главному экрану</button>
+            <button class="back-button" onclick="resetGame()" style="background: #e74c3c;">Сбросить игру</button>
+        </div>
     </div>
 
     <!-- View Selector -->
@@ -814,9 +838,6 @@
         // Setup Event Listeners
         function setupEventListeners() {
             // Admin settings
-            ['numTeams', 'maxPlayers', 'minTeams', 'speedCoef'].forEach(id => {
-                document.getElementById(id).addEventListener('change', updateSettings);
-            });
 
             // Team selection
             document.getElementById('teamSelect').addEventListener('change', handleTeamSelect);
@@ -910,17 +931,34 @@
             }
         }
 
-        // Update Settings
-        function updateSettings() {
+    // Update Settings
+        function saveSettings() {
             if (ws && ws.readyState === WebSocket.OPEN) {
+                const numTeams = parseInt(document.getElementById('numTeams').value);
+                const maxPlayers = parseInt(document.getElementById('maxPlayers').value);
+                const minTeams = parseInt(document.getElementById('minTeams').value);
+                const speedCoef = parseFloat(document.getElementById('speedCoef').value);
+
                 ws.send(JSON.stringify({
                     type: 'update_settings',
-                    numTeams: parseInt(document.getElementById('numTeams').value),
-                    maxPlayers: parseInt(document.getElementById('maxPlayers').value),
-                    minTeams: parseInt(document.getElementById('minTeams').value),
-                    speedCoef: parseFloat(document.getElementById('speedCoef').value)
+                    numTeams: numTeams,
+                    maxPlayers: maxPlayers,
+                    minTeams: minTeams,
+                    speedCoef: speedCoef
                 }));
+
+                alert('✅ Параметры сохранены!\n\nНовые настройки:\n' +
+                      `- Столов: ${numTeams}\n` +
+                      `- Игроков на команду: ${maxPlayers}\n` +
+                      `- Минимум команд: ${minTeams}\n` +
+                      `- Скорость: ${speedCoef}`);
+            } else {
+                alert('❌ Ошибка: нет подключения к серверу');
             }
+        }
+
+        function updateSettings() {
+            saveSettings();
         }
 
         // Start Race
