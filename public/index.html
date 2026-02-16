@@ -756,6 +756,25 @@
                 case 'settings_updated':
                 case 'game_reset':
                     gameState = data.state;
+                    
+                    // Скрыть экран победителя
+                    document.getElementById('winnerScreen').style.display = 'none';
+                    
+                    // Вернуться на стартовый экран
+                    if (currentView === 'display') {
+                        document.getElementById('raceScreen').style.display = 'none';
+                        document.getElementById('startScreen').style.display = 'flex';
+                    }
+                    
+                    // Сбросить форму игрока
+                    if (currentView === 'player' && currentPlayerId) {
+                        currentPlayerId = null;
+                        document.getElementById('controlScreen').style.display = 'none';
+                        document.getElementById('registrationForm').style.display = 'block';
+                        document.getElementById('waitingMessage').style.display = 'block';
+                        document.getElementById('racingMessage').style.display = 'none';
+                    }
+                    
                     updateDisplay();
                     break;
 
