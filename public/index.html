@@ -752,56 +752,62 @@
         // Handle messages from server
         function handleServerMessage(data) {
             switch (data.type) {
-                case 'game_state':
-                case 'settings_updated':
+               case 'game_state':
                     gameState = data.state;
+                    console.log('Received game_state:', gameState);
+                    
+                    // Обновить отображение
                     updateDisplay();
                     
-                    // Если игрок на экране регистрации - обновить список столов
-                    if (currentView === 'player' && !currentPlayerId) {
-                        updateTeamSelect();
+                    // Если игрок - обновить список столов
+                    if (currentView === 'player') {
+                        setTimeout(() => {
+                            updateTeamSelect();
+                        }, 100);
+                    }
+                    break;
+                    
+                case 'settings_updated':
+                    gameState = data.state;
+                    console.log('Settings updated:', gameState.settings);
+                    
+                    // Обновить отображение
+                    updateDisplay();
+                    
+                    // Если игрок - обновить список столов
+                    if (currentView === 'player') {
+                        setTimeout(() => {
+                            updateTeamSelect();
+                        }, 100);
                     }
                     break;
                     
                 case 'game_reset':
+                    console.log('Game reset received');
                     gameState = data.state;
                     
-                    // Скрыть экран победителя везде
-                    document.getElementById('winnerScreen').style.display = 'none';
-                    
-                    // ГЛАВНЫЙ ЭКРАН: вернуться на стартовую страницу
+                    // ГЛАВНЫЙ ЭКРАН
                     if (currentView === 'display') {
+                        // Скрыть экран победителя
+                        document.getElementById('winnerScreen').style.display = 'none';
+                        // Скрыть экран гонки
                         document.getElementById('raceScreen').style.display = 'none';
+                        // Показать стартовый экран
                         document.getElementById('startScreen').style.display = 'flex';
                     }
                     
-                    // ИГРОКИ: полный сброс
+                    // ИГРОКИ - перезагрузить страницу
                     if (currentView === 'player') {
-                        // Сбросить ID игрока
-                        currentPlayerId = null;
-                        currentTeamId = null;
-                        
-                        // Скрыть экран управления
-                        document.getElementById('controlScreen').style.display = 'none';
-                        
-                        // Показать форму регистрации
-                        document.getElementById('registrationForm').style.display = 'block';
-                        
-                        // Сбросить выбор команды
-                        document.getElementById('teamSelect').value = '';
-                        document.getElementById('teamNameGroup').style.display = 'none';
-                        document.getElementById('existingTeamName').style.display = 'none';
-                        document.getElementById('readyBtn').disabled = true;
-                        
-                        // Сбросить сообщения
-                        const waitingMsg = document.getElementById('waitingMessage');
-                        const racingMsg = document.getElementById('racingMessage');
-                        if (waitingMsg) waitingMsg.style.display = 'block';
-                        if (racingMsg) racingMsg.style.display = 'none';
+                        alert('Игра сброшена! Страница перезагрузится для новой регистрации.');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
                     }
                     
-                    // Обновить отображение для всех
-                    updateDisplay();
+                    // АДМИН - просто обновить
+                    if (currentView === 'admin') {
+                        updateDisplay();
+                    }
                     break;
 
                 case 'player_registered':
@@ -872,6 +878,13 @@
             if (urlParams.get('view') === 'player') {
                 showView('player');
             }
+            
+            // Запросить состояние через 1 секунду (после подключения)
+            setTimeout(() => {
+                if (currentView === 'player' && ws && ws.readyState === WebSocket.OPEN) {
+                    console.log('Requesting initial game state for player');
+                }
+            }, 1000);
         }
 
         // Generate QR Code
@@ -1319,6 +1332,7 @@
         }
 
         // Show View
+        // Show View
         function showView(view) {
             currentView = view;
             
@@ -1334,12 +1348,20 @@
                 event.target.classList.add('active');
             }
 
-            // Re-register with server
+            // Re-register with server and request state
             if (ws && ws.readyState === WebSocket.OPEN) {
                 if (view === 'display') {
                     ws.send(JSON.stringify({ type: 'register_display' }));
                 } else if (view === 'admin') {
                     ws.send(JSON.stringify({ type: 'register_admin' }));
+                } else if (view === 'player') {
+                    // Для игрока - обновить список столов
+                    setTimeout(() => {
+                        console.log('Player view opened, updating team select');
+                        if (gameState) {
+                            updateTeamSelect();
+                        }
+                    }, 500);
                 }
             }
         }
