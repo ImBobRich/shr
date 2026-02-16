@@ -747,6 +747,9 @@
                     ws.send(JSON.stringify({ type: 'register_display' }));
                 } else if (currentView === 'admin') {
                     ws.send(JSON.stringify({ type: 'register_admin' }));
+                } else if (currentView === 'player') {
+                    // Игрок запрашивает состояние сразу
+                    ws.send(JSON.stringify({ type: 'request_state' }));
                 }
 
                 if (reconnectInterval) {
@@ -1362,16 +1365,27 @@ Fix: Remove touch blocking that caused freeze
 
         // Update Team Select
         function updateTeamSelect() {
-            if (!gameState) return;
+            if (!gameState || !gameState.settings || !gameState.teams) {
+                console.log('updateTeamSelect: gameState not ready', gameState);
+                return;
+            }
             
             const select = document.getElementById('teamSelect');
-            if (!select) return;
+            if (!select) {
+                console.log('updateTeamSelect: select element not found');
+                return;
+            }
+            
+            console.log('updateTeamSelect: Updating with', gameState.settings.numTeams, 'teams');
             
             select.innerHTML = '<option value="">-- Выберите стол --</option>';
             
             for (let i = 1; i <= gameState.settings.numTeams; i++) {
                 const team = gameState.teams[i];
-                if (!team) continue;
+                if (!team) {
+                    console.log('updateTeamSelect: Team', i, 'not found in gameState.teams');
+                    continue;
+                }
                 
                 const playerCount = team.players.length;
                 const maxPlayers = gameState.settings.maxPlayers;
