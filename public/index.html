@@ -783,31 +783,34 @@
                     break;
                     
                 case 'game_reset':
-                    console.log('Game reset received');
+                    console.log('=== GAME RESET RECEIVED ===');
+                    console.log('Current view:', currentView);
+                    
                     gameState = data.state;
                     
-                    // ГЛАВНЫЙ ЭКРАН
-                    if (currentView === 'display') {
-                        // Скрыть экран победителя
-                        document.getElementById('winnerScreen').style.display = 'none';
-                        // Скрыть экран гонки
-                        document.getElementById('raceScreen').style.display = 'none';
-                        // Показать стартовый экран
-                        document.getElementById('startScreen').style.display = 'flex';
-                    }
+                    // Сброс экранов для ВСЕХ
+                    const winnerScreen = document.getElementById('winnerScreen');
+                    const raceScreen = document.getElementById('raceScreen');
+                    const startScreen = document.getElementById('startScreen');
+                    
+                    if (winnerScreen) winnerScreen.style.display = 'none';
+                    if (raceScreen) raceScreen.style.display = 'none';
+                    if (startScreen) startScreen.style.display = 'flex';
+                    
+                    console.log('Screens reset - winner hidden, race hidden, start shown');
                     
                     // ИГРОКИ - перезагрузить страницу
                     if (currentView === 'player') {
-                        alert('Игра сброшена! Страница перезагрузится для новой регистрации.');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
+                        console.log('Player view - will reload');
+                        alert('Игра сброшена! Страница перезагрузится.');
+                        setTimeout(() => window.location.reload(), 1000);
+                        return; // Не продолжаем выполнение
                     }
                     
-                    // АДМИН - просто обновить
-                    if (currentView === 'admin') {
-                        updateDisplay();
-                    }
+                    // Обновить для всех остальных
+                    updateDisplay();
+                    
+                    console.log('=== GAME RESET COMPLETE ===');
                     break;
 
                 case 'player_registered':
@@ -1035,28 +1038,10 @@
         }
 
         // Reset Game
-        // Reset Game
         function resetGame() {
             if (confirm('Вы уверены, что хотите сбросить игру? Все данные будут удалены.')) {
                 if (ws && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({ type: 'reset_game' }));
-                    
-                    // Локально тоже сбросить главный экран
-                    setTimeout(() => {
-                        gameState.gameStatus = 'registration';
-                        gameState.winner = null;
-                        
-                        // Скрыть экран победителя
-                        document.getElementById('winnerScreen').style.display = 'none';
-                        
-                        // Скрыть экран гонки
-                        document.getElementById('raceScreen').style.display = 'none';
-                        
-                        // Показать стартовый экран
-                        document.getElementById('startScreen').style.display = 'flex';
-                        
-                        console.log('Main screen reset to start');
-                    }, 100);
                 }
             }
         }
@@ -1258,38 +1243,7 @@
                 }));
             }
         }
-        // Update Team Select
-        function updateTeamSelect() {
-            if (!gameState || !gameState.teams) return;
-            
-            const select = document.getElementById('teamSelect');
-            if (!select) return;
-            
-            console.log('Updating team select, numTeams:', gameState.settings.numTeams); // Для отладки
-            
-            select.innerHTML = '<option value="">-- Выберите стол --</option>';
-            
-            for (let i = 1; i <= gameState.settings.numTeams; i++) {
-                const team = gameState.teams[i];
-                if (!team) {
-                    console.log('Team', i, 'not found'); // Для отладки
-                    continue;
-                }
-                
-                const playerCount = team.players ? team.players.length : 0;
-                const maxPlayers = gameState.settings.maxPlayers;
-                const disabled = playerCount >= maxPlayers;
-                
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = `Стол ${i}${team.name ? ' - ' + team.name : ''} (${playerCount}/${maxPlayers})`;
-                option.disabled = disabled;
-                select.appendChild(option);
-                
-                console.log('Added team option:', i, option.textContent); // Для отладки
-            }
-        }
-        // Update Display
+       
         // Update Display
         function updateDisplay() {
             if (!gameState) return;
