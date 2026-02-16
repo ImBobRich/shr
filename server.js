@@ -213,19 +213,24 @@ wss.on('connection', (ws) => {
                     break;
 
                 case 'reset_game':
-                    if (clientType === 'admin') {
+                    if (clientType === 'admin' || clientType === 'display') {
                         gameState.gameStatus = 'registration';
                         gameState.raceStartTime = null;
                         gameState.winner = null;
                         gameState.players = {};
+                        
+                        // Очистить всех игроков
+                        clients.clear();
+                        
                         initializeTeams();
 
+                        // Отправить ВСЕМ клиентам
                         broadcast({
                             type: 'game_reset',
                             state: gameState
                         });
                         
-                        console.log('Game reset');
+                        console.log('Game reset - all players disconnected');
                     }
                     break;
             }
