@@ -15,9 +15,9 @@ const gameState = {
     settings: {
         numTeams: 7,
         maxPlayers: 3,
-        minTeams: 1,
+        minTeams: 1,  // Changed from 2 to 1
         speedCoef: 1,
-        baseSpeed: 1000 / 330
+        baseSpeed: 1000 / 90  // Slower speed (was 1000/30)
     },
     teams: {},
     players: {},
@@ -85,17 +85,8 @@ wss.on('connection', (ws) => {
     let playerId = null;
 
     ws.on('message', (message) => {
-            try {
-                const data = JSON.parse(message);
-                
-                // НОВОЕ: Если игрок запрашивает состояние
-                if (data.type === 'request_state' && clientType === null) {
-                    ws.send(JSON.stringify({
-                        type: 'game_state',
-                        state: gameState
-                    }));
-                    return;
-                }
+        try {
+            const data = JSON.parse(message);
             
             switch (data.type) {
                 case 'register_display':
@@ -116,6 +107,11 @@ wss.on('connection', (ws) => {
                         state: gameState
                     }));
                     console.log('Admin registered');
+                    break;
+
+                case 'request_state':
+                    ws.send(JSON.stringify({ type: 'game_state', state: gameState }));
+                    console.log('State sent on request');
                     break;
 
                 case 'register_player':
@@ -222,24 +218,19 @@ wss.on('connection', (ws) => {
                     break;
 
                 case 'reset_game':
-                    if (clientType === 'admin' || clientType === 'display') {
+                    if (clientType === 'admin') {
                         gameState.gameStatus = 'registration';
                         gameState.raceStartTime = null;
                         gameState.winner = null;
                         gameState.players = {};
-                        
-                        // Очистить всех игроков
-                        clients.clear();
-                        
                         initializeTeams();
 
-                        // Отправить ВСЕМ клиентам
                         broadcast({
                             type: 'game_reset',
                             state: gameState
                         });
                         
-                        console.log('Game reset - all players disconnected');
+                        console.log('Game reset');
                     }
                     break;
             }
