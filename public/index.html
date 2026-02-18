@@ -2,1479 +2,708 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>СОЛЛАЛЬ 2026. УРАЛЬСКИЕ СКАЧКИ</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #1a1a2e; overflow-x: hidden; }
 
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            overflow-x: hidden;
+        #connectionStatus {
+            position: fixed; top: 10px; right: 10px;
+            padding: 8px 16px; border-radius: 20px;
+            font-size: 13px; font-weight: bold; z-index: 9999;
         }
+        .connected { background: #2ecc71; color: white; }
+        .disconnected { background: #e74c3c; color: white; }
 
-        /* Main Display Screen */
+        #viewSelector {
+            position: fixed; bottom: 20px; right: 20px;
+            background: white; border-radius: 12px; padding: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 9999; display: flex; flex-direction: column; gap: 6px;
+        }
+        .view-btn {
+            padding: 10px 18px; background: #3498db; color: white;
+            border: none; border-radius: 8px; cursor: pointer;
+            font-size: 14px; font-weight: bold;
+        }
+        .view-btn:hover { background: #2980b9; }
+        .view-btn.active { background: #27ae60; }
+        @media (max-width: 768px) { #viewSelector { display: none; } }
+
         #mainDisplay {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-            background: linear-gradient(to bottom, #87CEEB 0%, #98D8E8 50%, #90EE90 50%, #7CCD7C 100%);
+            width: 100vw; height: 100vh; position: relative;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98D8E8 45%, #90EE90 45%, #7CCD7C 100%);
         }
 
         #startScreen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            padding: 40px;
-            text-align: center;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100%; padding: 30px; text-align: center;
         }
-
         .game-title {
-            font-size: 72px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 30px;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            font-size: 64px; font-weight: bold; line-height: 1.2; margin-bottom: 20px;
             background: linear-gradient(45deg, #d4af37, #ffd700);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
-
         #qrcodeContainer {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            margin-bottom: 30px;
+            background: white; padding: 20px; border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2); margin-bottom: 20px;
         }
-
-        .rules {
-            background: rgba(255,255,255,0.9);
-            padding: 30px 40px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            max-width: 600px;
+        .rules-box {
+            background: rgba(255,255,255,0.92); padding: 20px 30px;
+            border-radius: 12px; margin-bottom: 20px; max-width: 500px;
         }
-
-        .rules h3 {
-            font-size: 32px;
-            margin-bottom: 20px;
-            color: #2c3e50;
-        }
-
-        .rules ol {
-            text-align: left;
-            font-size: 24px;
-            line-height: 1.8;
-            color: #34495e;
-        }
-
-        .start-button {
-            padding: 20px 60px;
-            font-size: 36px;
-            font-weight: bold;
+        .rules-box h3 { font-size: 26px; color: #2c3e50; margin-bottom: 12px; }
+        .rules-box ol { text-align: left; font-size: 20px; line-height: 1.8; color: #34495e; }
+        #startGameBtn {
+            padding: 18px 60px; font-size: 32px; font-weight: bold;
             background: linear-gradient(45deg, #2ecc71, #27ae60);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-            transition: all 0.3s;
+            color: white; border: none; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3); transition: all 0.3s;
         }
-
-        .start-button:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-        }
-
-        .start-button:disabled {
-            background: #95a5a6;
-            cursor: not-allowed;
+        #startGameBtn:hover:not(:disabled) { transform: translateY(-3px); }
+        #startGameBtn:disabled { background: #95a5a6; cursor: not-allowed; }
+        #teamsCount {
+            margin-top: 15px; font-size: 20px; color: #2c3e50;
+            background: rgba(255,255,255,0.8); padding: 8px 20px; border-radius: 20px;
         }
 
         #raceScreen {
-            display: none;
-            padding: 40px 20px;
-            height: 100%;
-        }
-
-        .race-tracks {
-            height: calc(100% - 150px);
-            display: flex;
+            display: none; padding: 20px; height: 100%;
             flex-direction: column;
-            justify-content: space-around;
         }
-
+        .race-tracks {
+            flex: 1; display: flex; flex-direction: column;
+            justify-content: space-around; gap: 4px;
+        }
         .track {
-            position: relative;
-            height: 12%;
-            background: linear-gradient(to right, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
-            border-radius: 10px;
-            margin: 5px 0;
-            border: 2px solid rgba(255,255,255,0.5);
+            position: relative; flex: 1; border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.6); min-height: 60px;
         }
-
+        .track:nth-child(1) { background: linear-gradient(to right, #f8c8e8, #e8a8d8); }
+        .track:nth-child(2) { background: linear-gradient(to right, #fff94d, #f5e93d); }
+        .track:nth-child(3) { background: linear-gradient(to right, #7fffd4, #5fe9b4); }
+        .track:nth-child(4) { background: linear-gradient(to right, #87ceeb, #67bedb); }
+        .track:nth-child(5) { background: linear-gradient(to right, #ffb3ba, #ff93a0); }
+        .track:nth-child(6) { background: linear-gradient(to right, #d4d45e, #c4c44e); }
+        .track:nth-child(7) { background: linear-gradient(to right, #c8f0a0, #a8e080); }
+        .track:nth-child(8) { background: linear-gradient(to right, #ffd0a0, #ffb080); }
         .finish-line {
-            position: absolute;
-            right: 50px;
-            top: 0;
-            bottom: 0;
-            width: 8px;
-            background: repeating-linear-gradient(
-                45deg,
-                #000,
-                #000 10px,
-                #fff 10px,
-                #fff 20px
-            );
+            position: absolute; right: 40px; top: 0; bottom: 0; width: 6px;
+            background: repeating-linear-gradient(180deg, #000 0px, #000 8px, #fff 8px, #fff 16px);
         }
-
-        .horse-container {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            transition: left 0.1s linear;
-            display: flex;
-            align-items: center;
+        .horse-wrap {
+            position: absolute; left: 10px; top: 50%;
+            transform: translateY(-50%); transition: left 0.08s linear;
         }
-
-        .horse {
-            font-size: 48px;
-            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
-            transform: scaleX(-1); /* Разворачиваем лошадь */
-            animation: gallop 0.3s steps(2) infinite; /* Анимация галопа */
+        .horse-emoji {
+            font-size: 40px; display: block;
+            transform: scaleX(-1);
+            animation: gallop 0.4s ease-in-out infinite;
         }
-
         @keyframes gallop {
-            0% { transform: scaleX(-1) translateY(0px); }
-            50% { transform: scaleX(-1) translateY(-5px); }
-            100% { transform: scaleX(-1) translateY(0px); }
+            0%   { transform: scaleX(-1) translateY(0px) rotate(0deg); }
+            25%  { transform: scaleX(-1) translateY(-4px) rotate(-2deg); }
+            50%  { transform: scaleX(-1) translateY(-6px) rotate(0deg); }
+            75%  { transform: scaleX(-1) translateY(-4px) rotate(2deg); }
+            100% { transform: scaleX(-1) translateY(0px) rotate(0deg); }
         }
-
         .team-label {
-            position: absolute;
-            left: 10px;
-            top: 5px;
-            font-weight: bold;
-            font-size: 18px;
-            color: #2c3e50;
-            background: rgba(255,255,255,0.8);
-            padding: 3px 10px;
-            border-radius: 5px;
+            position: absolute; left: 8px; top: 4px;
+            font-weight: bold; font-size: 15px; color: #2c3e50;
+            background: rgba(255,255,255,0.85); padding: 2px 8px; border-radius: 4px;
         }
-
-        .stats-panel {
-            background: rgba(255,255,255,0.95);
-            padding: 20px;
-            border-radius: 15px;
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
+        #statsPanel {
+            background: rgba(255,255,255,0.95); padding: 12px 20px;
+            border-radius: 12px; margin-top: 10px;
+            display: flex; justify-content: space-around; flex-wrap: wrap; gap: 8px;
         }
-
-        .team-stats {
-            margin: 5px 15px;
-            text-align: center;
-        }
-
-        .team-stats .team-name {
-            font-weight: bold;
-            font-size: 18px;
-            color: #2c3e50;
-        }
-
-        .team-stats .player-count {
-            font-size: 16px;
-            color: #7f8c8d;
-        }
-
-        .team-stats .shake-intensity {
-            font-size: 14px;
-            color: #27ae60;
-            font-weight: bold;
-        }
+        .team-stat { text-align: center; }
+        .team-stat .sname { font-weight: bold; font-size: 15px; color: #2c3e50; }
+        .team-stat .splayers { font-size: 13px; color: #7f8c8d; }
+        .team-stat .sintensity { font-size: 13px; color: #27ae60; font-weight: bold; }
 
         #winnerScreen {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
+            display: none; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            justify-content: center; align-items: center;
+            flex-direction: column; z-index: 100;
         }
-
-        .winner-text {
-            font-size: 80px;
-            font-weight: bold;
-            color: #ffd700;
-            text-shadow: 0 0 20px rgba(255,215,0,0.8);
-            margin-bottom: 20px;
-            animation: pulse 1s infinite;
+        .winner-title {
+            font-size: 70px; font-weight: bold; color: #ffd700;
+            text-shadow: 0 0 30px rgba(255,215,0,0.8);
+            animation: pulse 1s infinite; margin-bottom: 20px;
         }
-
-        .winner-team {
-            font-size: 100px;
-            font-weight: bold;
-            color: white;
+        .winner-name {
+            font-size: 90px; font-weight: bold; color: white;
             text-shadow: 0 0 30px rgba(255,255,255,0.8);
+            text-align: center; padding: 0 40px;
         }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
         .firework {
-            position: absolute;
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            animation: explode 1s ease-out;
+            position: absolute; width: 6px; height: 6px; border-radius: 50%;
+            animation: explode 1s ease-out forwards;
         }
-
         @keyframes explode {
-            0% {
-                transform: translate(0, 0);
-                opacity: 1;
-            }
-            100% {
-                transform: translate(var(--tx), var(--ty));
-                opacity: 0;
-            }
+            0%   { transform: translate(0,0); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)); opacity: 0; }
         }
 
-        /* Player Interface */
         #playerInterface {
-            display: none;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .player-container {
-            max-width: 500px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        }
-
-        .player-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-size: 18px;
-            font-weight: bold;
-            color: #34495e;
-            margin-bottom: 8px;
-        }
-
-        select, input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            transition: border 0.3s;
-        }
-
-        select:focus, input[type="text"]:focus {
-            outline: none;
-            border-color: #3498db;
-        }
-
-        .ready-button {
-            width: 100%;
-            padding: 18px;
-            font-size: 24px;
-            font-weight: bold;
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .ready-button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(52,152,219,0.4);
-        }
-
-        .ready-button:disabled {
-            background: #95a5a6;
-            cursor: not-allowed;
-        }
-
-        #controlScreen {
-            display: none;
-            text-align: center;
-        }
-
-        .shake-zone {
-            width: 100%;
-            height: 300px;
+            display: none; min-height: 100vh; padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            color: white;
-            font-weight: bold;
-            margin: 20px 0;
-            cursor: pointer;
-            user-select: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            transition: all 0.2s;
         }
-
-        .shake-zone:active {
-            transform: scale(0.95);
-        }
-
-        .waiting-message {
-            font-size: 20px;
-            color: #e74c3c;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-
-        .racing-message {
-            font-size: 20px;
-            color: #27ae60;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-
-        .intensity-display {
-            font-size: 20px;
-            color: #2c3e50;
-            margin: 15px 0;
-        }
-
-        .intensity-bar {
-            width: 100%;
-            height: 30px;
-            background: #ecf0f1;
-            border-radius: 15px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-
-        .intensity-fill {
-            height: 100%;
-            background: linear-gradient(to right, #2ecc71, #27ae60);
-            transition: width 0.1s;
-        }
-
-        /* Admin Panel */
-        #adminPanel {
-            display: none;
-            padding: 30px;
-            max-width: 800px;
-            margin: 40px auto;
-            background: white;
-            border-radius: 20px;
+        .player-box {
+            max-width: 480px; margin: 0 auto; background: white;
+            border-radius: 20px; padding: 28px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
-
-        .admin-title {
-            font-size: 32px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 30px;
-            text-align: center;
+        .player-title { font-size: 26px; font-weight: bold; color: #2c3e50; text-align: center; margin-bottom: 22px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 16px; font-weight: bold; color: #34495e; margin-bottom: 6px; }
+        .form-group select, .form-group input[type="text"] {
+            width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 8px;
         }
-
-        .setting-group {
-            margin-bottom: 25px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
+        .form-group select:focus, .form-group input:focus { outline: none; border-color: #3498db; }
+        #readyBtn {
+            width: 100%; padding: 16px; font-size: 22px; font-weight: bold;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white; border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s;
         }
+        #readyBtn:hover:not(:disabled) { transform: translateY(-2px); }
+        #readyBtn:disabled { background: #95a5a6; cursor: not-allowed; }
 
-        .setting-label {
-            font-size: 18px;
-            font-weight: bold;
-            color: #34495e;
-            margin-bottom: 10px;
+        #controlScreen { display: none; text-align: center; }
+        .team-display { font-size: 22px; font-weight: bold; color: #2c3e50; margin-bottom: 12px; }
+        .status-msg {
+            font-size: 18px; font-weight: bold; padding: 10px;
+            border-radius: 8px; margin-bottom: 12px;
         }
+        .status-waiting  { color: #e74c3c; background: #fdecea; }
+        .status-racing   { color: #27ae60; background: #d5f4e6; display: none; }
+        .status-finished { color: #8e44ad; background: #f0e6f6; display: none; }
 
-        .setting-input {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-        }
-
-        .setting-value {
-            font-size: 16px;
-            color: #7f8c8d;
-            margin-top: 5px;
-        }
-
-        .back-button {
-            padding: 12px 30px;
-            font-size: 18px;
-            background: #95a5a6;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-
-        .back-button:hover {
-            background: #7f8c8d;
-        }
-        .save-button {
-            padding: 12px 30px;
-            font-size: 18px;
-            background: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 20px;
-            margin-right: 10px;
-        }
-        .save-button:hover {
-            background: #229954;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .connection-status {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            z-index: 1000;
-        }
-
-        .connected {
-            background: #2ecc71;
-            color: white;
-        }
-
-        .disconnected {
-            background: #e74c3c;
-            color: white;
-        }
-
-        /* View Selector */
-        .view-selector {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: white;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-            z-index: 1000;
-        }
-
-        .view-button {
-            display: block;
-            padding: 10px 20px;
-            margin: 5px 0;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .view-button:hover {
-            background: #2980b9;
-        }
-
-        .view-button.active {
-            background: #27ae60;
-        }
-
-        /* Блокировка случайных нажатий */
-        .no-touch {
+        #shakeZone {
+            width: 100%; height: 260px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 20px; display: flex; align-items: center;
+            justify-content: center; font-size: 44px; color: white;
+            font-weight: bold; margin: 14px 0; cursor: pointer;
+            user-select: none; -webkit-user-select: none;
             touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-touch-callout: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         }
+        #shakeZone:active { transform: scale(0.97); }
+        .intensity-label { font-size: 18px; color: #2c3e50; margin: 10px 0; }
+        .intensity-bar {
+            width: 100%; height: 28px; background: #ecf0f1;
+            border-radius: 14px; overflow: hidden; margin: 8px 0;
+        }
+        #intensityFill {
+            height: 100%; width: 0%;
+            background: linear-gradient(to right, #2ecc71, #27ae60);
+            transition: width 0.1s; border-radius: 14px;
+        }
+        .active-players { font-size: 15px; color: #7f8c8d; margin-top: 10px; }
 
-        .back-to-game-button {
-            width: 100%;
-            padding: 15px;
-            font-size: 18px;
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            margin-top: 15px;
+        #adminPanel {
+            display: none; padding: 30px; max-width: 700px;
+            margin: 30px auto; background: white;
+            border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
-
-        .back-to-game-button:hover {
-            background: #c0392b;
-        }
-        
-        @media (max-width: 768px) {
-            .game-title {
-                font-size: 40px;
-            }
-            
-            .rules h3 {
-                font-size: 24px;
-            }
-            
-            .rules ol {
-                font-size: 18px;
-            }
-
-            .view-selector {
-                display: none;
-            }
-        }
+        .admin-title { font-size: 28px; font-weight: bold; color: #2c3e50; text-align: center; margin-bottom: 24px; }
+        .setting-group { margin-bottom: 20px; padding: 16px; background: #f8f9fa; border-radius: 10px; }
+        .setting-group label { display: block; font-size: 16px; font-weight: bold; color: #34495e; margin-bottom: 8px; }
+        .setting-group input { width: 100%; padding: 10px; font-size: 16px; border: 2px solid #ddd; border-radius: 8px; }
+        .setting-group .hint { font-size: 13px; color: #95a5a6; margin-top: 4px; }
+        .admin-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+        .btn-save { flex:1; padding:14px; font-size:16px; font-weight:bold; background:#27ae60; color:white; border:none; border-radius:10px; cursor:pointer; min-width:140px; }
+        .btn-save:hover { background:#229954; }
+        .btn-back { flex:1; padding:14px; font-size:16px; background:#95a5a6; color:white; border:none; border-radius:10px; cursor:pointer; min-width:140px; }
+        .btn-back:hover { background:#7f8c8d; }
+        .btn-reset { flex:1; padding:14px; font-size:16px; background:#e74c3c; color:white; border:none; border-radius:10px; cursor:pointer; min-width:140px; }
+        .btn-reset:hover { background:#c0392b; }
     </style>
 </head>
 <body>
-    <!-- Connection Status -->
-    <div id="connectionStatus" class="connection-status disconnected">Подключение...</div>
 
-    <!-- Main Display Screen -->
-    <div id="mainDisplay">
-        <!-- Start Screen -->
-        <div id="startScreen">
-            <h1 class="game-title">СОЛЛАЛЬ 2026<br>УРАЛЬСКИЕ СКАЧКИ</h1>
-            
-            <div id="qrcodeContainer"></div>
-            
-            <div class="rules">
-                <h3>Правила игры:</h3>
-                <ol>
-                    <li>Отсканируй QR-код</li>
-                    <li>Выбери свою команду</li>
-                    <li>Играй</li>
-                </ol>
-            </div>
-            
-            <button class="start-button" id="startGameBtn" disabled>СТАРТ</button>
-            
-            <div style="margin-top: 20px; font-size: 18px; color: #34495e;">
-                Зарегистрировано команд: <span id="registeredTeams">0</span>
-            </div>
+<div id="connectionStatus" class="disconnected">● Подключение...</div>
+
+<div id="viewSelector">
+    <button class="view-btn active" id="btnDisplay" onclick="showView('display')">📺 Главный экран</button>
+    <button class="view-btn" id="btnPlayer"  onclick="showView('player')">📱 Игрок</button>
+    <button class="view-btn" id="btnAdmin"   onclick="showView('admin')">⚙️ Админ</button>
+</div>
+
+<!-- MAIN DISPLAY -->
+<div id="mainDisplay">
+    <div id="startScreen">
+        <h1 class="game-title">СОЛЛАЛЬ 2026<br>УРАЛЬСКИЕ СКАЧКИ</h1>
+        <div id="qrcodeContainer"></div>
+        <div class="rules-box">
+            <h3>Правила игры:</h3>
+            <ol>
+                <li>Отсканируй QR-код</li>
+                <li>Выбери свою команду</li>
+                <li>Играй — тряси телефон!</li>
+            </ol>
         </div>
+        <button id="startGameBtn" disabled>СТАРТ</button>
+        <div id="teamsCount">Зарегистрировано команд: <strong id="regCount">0</strong></div>
+    </div>
+    <div id="raceScreen">
+        <div class="race-tracks" id="raceTracks"></div>
+        <div id="statsPanel"></div>
+    </div>
+    <div id="winnerScreen">
+        <div class="winner-title">🏆 ПОБЕДИТЕЛЬ 🏆</div>
+        <div class="winner-name" id="winnerName"></div>
+    </div>
+</div>
 
-        <!-- Race Screen -->
-        <div id="raceScreen">
-            <div class="race-tracks" id="raceTracks"></div>
-            <div class="stats-panel" id="statsPanel"></div>
+<!-- PLAYER -->
+<div id="playerInterface">
+    <div class="player-box">
+        <h2 class="player-title">🏇 УРАЛЬСКИЕ СКАЧКИ</h2>
+        <div id="regForm">
+            <div class="form-group">
+                <label>Выберите стол / команду:</label>
+                <select id="teamSelect"><option value="">-- Выберите стол --</option></select>
+            </div>
+            <div class="form-group" id="newTeamGroup" style="display:none;">
+                <label>Название команды:</label>
+                <input type="text" id="teamNameInput" placeholder="Придумайте название">
+                <div style="font-size:13px;color:#95a5a6;margin-top:4px;">Первый игрок задаёт название</div>
+            </div>
+            <div class="form-group" id="existingTeamGroup" style="display:none;">
+                <label>Ваша команда:</label>
+                <div style="font-size:20px;font-weight:bold;color:#27ae60;padding:10px;background:#d5f4e6;border-radius:8px;">
+                    <span id="existingTeamName"></span>
+                </div>
+            </div>
+            <button id="readyBtn" disabled>ГОТОВ</button>
         </div>
-
-        <!-- Winner Screen -->
-        <div id="winnerScreen">
-            <div class="winner-text">🏆 ПОБЕДИТЕЛЬ 🏆</div>
-            <div class="winner-team" id="winnerTeamName"></div>
+        <div id="controlScreen">
+            <div class="team-display">Команда: <span id="myTeamName"></span></div>
+            <div class="status-msg status-waiting"  id="statusWaiting">⏳ Ожидание старта...</div>
+            <div class="status-msg status-racing"   id="statusRacing">🏁 ГОНКА ИДЁТ! ТРЯСИ!</div>
+            <div class="status-msg status-finished" id="statusFinished">🏆 Гонка завершена!</div>
+            <div id="shakeZone"><div>🏇<br>ТРЯСИ!</div></div>
+            <div class="intensity-label">Интенсивность: <span id="intensityVal">0</span></div>
+            <div class="intensity-bar"><div id="intensityFill"></div></div>
+            <div class="active-players">Игроков в команде: <span id="activeCount">0</span></div>
         </div>
     </div>
+</div>
 
-    <!-- Player Interface -->
-    <div id="playerInterface">
-        <div class="player-container">
-            <h2 class="player-title">🏇 Регистрация участника</h2>
-            
-            <div id="registrationForm">
-                <div class="form-group">
-                    <label for="teamSelect">Выберите стол / команду:</label>
-                    <select id="teamSelect">
-                        <option value="">-- Выберите стол --</option>
-                    </select>
-                </div>
-                
-                <div class="form-group" id="teamNameGroup" style="display: none;">
-                    <label for="teamName">Название команды:</label>
-                    <input type="text" id="teamName" placeholder="Придумайте название команды">
-                    <div style="font-size: 14px; color: #7f8c8d; margin-top: 5px;">
-                        Первый игрок команды задаёт название
-                    </div>
-                </div>
-                
-                <div class="form-group" id="existingTeamName" style="display: none;">
-                    <label>Название команды:</label>
-                    <div style="font-size: 20px; font-weight: bold; color: #27ae60; padding: 10px; background: #d5f4e6; border-radius: 8px;">
-                        <span id="displayTeamName"></span>
-                    </div>
-                </div>
-                
-                <button class="ready-button" id="readyBtn" disabled>ГОТОВ</button>
-            </div>
-
-            <div id="controlScreen">
-                <h3 style="font-size: 24px; color: #2c3e50; margin-bottom: 15px;">
-                    Команда: <span id="currentTeamName"></span>
-                </h3>
-
-                <div id="waitingMessage" class="waiting-message">
-                    ⏳ Ожидание старта гонки...
-                </div>
-
-                <div id="racingMessage" class="racing-message" style="display: none;">
-                    🏁 ГОНКА НАЧАЛАСЬ!<br>
-                    <span style="font-size: 14px;">💡 Экран заблокирован от случайных нажатий</span>
-                </div>
-                
-                <div class="shake-zone no-touch" id="shakeZone">
-                    <div>🏇<br>ТРЯСИ!</div>
-                </div>
-                
-                <div class="intensity-display">
-                    Интенсивность: <span id="intensityValue">0</span>
-                </div>
-                
-                <div class="intensity-bar">
-                    <div class="intensity-fill" id="intensityFill"></div>
-                </div>
-                
-                <div style="margin-top: 20px; font-size: 16px; color: #7f8c8d;">
-                    Активных игроков: <span id="activePlayersCount">0</span>
-                </div>
-                
-                <button class="back-to-game-button" id="backToGameBtn" style="display: none;" onclick="returnToGame()">
-                    ⬅️ Вернуться в игру
-                </button>
-            </div>
-        </div>
+<!-- ADMIN -->
+<div id="adminPanel">
+    <h2 class="admin-title">⚙️ Панель администратора</h2>
+    <div class="setting-group">
+        <label>Количество столов / команд:</label>
+        <input type="number" id="setNumTeams" min="1" max="12" value="7">
+        <div class="hint">По умолчанию: 7</div>
     </div>
-
-    <!-- Admin Panel -->
-    <div id="adminPanel">
-        <h2 class="admin-title">⚙️ Панель администратора</h2>
-        
-        <div class="setting-group">
-            <div class="setting-label">Количество столов / команд:</div>
-            <input type="number" class="setting-input" id="numTeams" min="1" max="12" value="7">
-            <div class="setting-value">По умолчанию: 7</div>
-        </div>
-        
-        <div class="setting-group">
-            <div class="setting-label">Максимум игроков от команды:</div>
-            <input type="number" class="setting-input" id="maxPlayers" min="1" max="20" value="3">
-            <div class="setting-value">По умолчанию: 3</div>
-        </div>
-        
-        <div class="setting-group">
-            <div class="setting-label">Минимум команд для старта:</div>
-            <input type="number" class="setting-input" id="minTeams" min="1" max="12" value="2">
-            <div class="setting-value">По умолчанию: 2</div>
-        </div>
-        
-        <div class="setting-group">
-            <div class="setting-label">Коэффициент скорости (0.1 - 5):</div>
-            <input type="number" class="setting-input" id="speedCoef" min="0.1" max="5" step="0.1" value="1">
-            <div class="setting-value">По умолчанию: 1 (финиш за ~30 сек при активном встряхивании)</div>
-        </div>
-        
-        <div class="button-group">
-            <button class="save-button" onclick="saveSettings()">💾 Сохранить параметры</button>
-            <button class="back-button" onclick="showView('display')">Вернуться к главному экрану</button>
-            <button class="back-button" onclick="resetGame()" style="background: #e74c3c;">Сбросить игру</button>
-        </div>
+    <div class="setting-group">
+        <label>Максимум игроков от команды:</label>
+        <input type="number" id="setMaxPlayers" min="1" max="20" value="3">
+        <div class="hint">По умолчанию: 3</div>
     </div>
-
-    <!-- View Selector -->
-    <div class="view-selector">
-        <button class="view-button active" onclick="showView('display')">Главный экран</button>
-        <button class="view-button" onclick="showView('player')">Игрок</button>
-        <button class="view-button" onclick="showView('admin')">Админ</button>
+    <div class="setting-group">
+        <label>Минимум команд для старта:</label>
+        <input type="number" id="setMinTeams" min="1" max="12" value="1">
+        <div class="hint">По умолчанию: 1</div>
     </div>
+    <div class="setting-group">
+        <label>Коэффициент скорости (0.1 – 5):</label>
+        <input type="number" id="setSpeedCoef" min="0.1" max="5" step="0.1" value="1">
+        <div class="hint">1 = финиш ~90 сек при активной тряске</div>
+    </div>
+    <div class="admin-buttons">
+        <button class="btn-save"  onclick="saveSettings()">💾 Сохранить параметры</button>
+        <button class="btn-back"  onclick="showView('display')">← Главный экран</button>
+        <button class="btn-reset" onclick="resetGame()">🔄 Сбросить игру</button>
+    </div>
+</div>
 
-    <script>
-        // WebSocket connection
-        let ws = null;
-        let reconnectInterval = null;
-        let currentPlayerId = null;
-        let currentTeamId = null;
-        let currentView = 'display';
-        let gameState = null;
+<script>
+var ws = null, reconnectTimer = null;
+var currentView = 'display';
+var gameState = null;
+var myPlayerId = null, myTeamId = null;
 
-        // Connect to WebSocket server
-        function connect() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}`;
-            
-            ws = new WebSocket(wsUrl);
+// ── CONNECT ──────────────────────────────────
+function connect() {
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(proto + '//' + location.host);
+    ws.onopen    = onOpen;
+    ws.onmessage = function(e) { try { handleMsg(JSON.parse(e.data)); } catch(ex) { console.error(ex); } };
+    ws.onclose   = function() { setStatus(false); if (!reconnectTimer) reconnectTimer = setInterval(connect, 3000); };
+    ws.onerror   = function() { ws.close(); };
+}
 
-            ws.onopen = () => {
-                console.log('Connected to server');
-                updateConnectionStatus(true);
-                
-                // Register client based on current view
-                if (currentView === 'display') {
-                    ws.send(JSON.stringify({ type: 'register_display' }));
-                } else if (currentView === 'admin') {
-                    ws.send(JSON.stringify({ type: 'register_admin' }));
-                } else if (currentView === 'player') {
-                    // Игрок запрашивает состояние сразу
-                    ws.send(JSON.stringify({ type: 'request_state' }));
-                }
+function onOpen() {
+    setStatus(true);
+    clearInterval(reconnectTimer); reconnectTimer = null;
+    registerView();
+}
 
-                if (reconnectInterval) {
-                    clearInterval(reconnectInterval);
-                    reconnectInterval = null;
-                }
-            };
+function registerView() {
+    if      (currentView === 'display') send({ type: 'register_display' });
+    else if (currentView === 'admin')   send({ type: 'register_admin' });
+    else if (currentView === 'player')  send({ type: 'request_state' });
+}
 
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                handleServerMessage(data);
-            };
+function send(obj) {
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+}
 
-            ws.onclose = () => {
-                console.log('Disconnected from server');
-                updateConnectionStatus(false);
-                
-                // Try to reconnect
-                if (!reconnectInterval) {
-                    reconnectInterval = setInterval(() => {
-                        console.log('Attempting to reconnect...');
-                        connect();
-                    }, 3000);
-                }
-            };
+function setStatus(ok) {
+    var s = document.getElementById('connectionStatus');
+    s.textContent = ok ? '● Подключено' : '● Отключено';
+    s.className = ok ? 'connected' : 'disconnected';
+}
 
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-            };
+// ── MESSAGES ─────────────────────────────────
+function handleMsg(msg) {
+    switch (msg.type) {
+        case 'game_state':
+        case 'settings_updated':
+            gameState = msg.state;
+            refreshAll();
+            break;
+
+        case 'player_registered':
+            myPlayerId = msg.playerId;
+            myTeamId   = msg.teamId;
+            document.getElementById('regForm').style.display        = 'none';
+            document.getElementById('controlScreen').style.display  = 'block';
+            document.getElementById('myTeamName').textContent        = msg.teamName;
+            break;
+
+        case 'race_started':
+            gameState = msg.state;
+            if (currentView === 'display') openRaceScreen();
+            if (currentView === 'player')  { setStatus2('racing'); }
+            break;
+
+        case 'race_update':
+            if (currentView === 'display') updateTracks(msg.teams);
+            break;
+
+        case 'race_finished':
+            if (gameState) { gameState.gameStatus = 'finished'; gameState.winner = msg.winner; }
+            if (currentView === 'display') showWinner(msg.winner);
+            if (currentView === 'player')  setStatus2('finished', msg.winner.name);
+            break;
+
+        case 'game_reset':
+            gameState = msg.state;
+            myPlayerId = null; myTeamId = null;
+            doReset();
+            break;
+
+        case 'error':
+            alert(msg.message);
+            break;
+    }
+}
+
+// ── RESET ─────────────────────────────────────
+function doReset() {
+    // Main display — всегда сбрасываем
+    document.getElementById('winnerScreen').style.display = 'none';
+    document.getElementById('raceScreen').style.display   = 'none';
+    document.getElementById('startScreen').style.display  = 'flex';
+
+    // Player
+    document.getElementById('controlScreen').style.display = 'none';
+    document.getElementById('regForm').style.display       = 'block';
+    document.getElementById('teamSelect').value            = '';
+    document.getElementById('newTeamGroup').style.display      = 'none';
+    document.getElementById('existingTeamGroup').style.display = 'none';
+    document.getElementById('readyBtn').disabled               = true;
+    setStatus2('waiting');
+
+    refreshAll();
+}
+
+function setStatus2(state, winnerName) {
+    document.getElementById('statusWaiting').style.display  = state === 'waiting'  ? 'block' : 'none';
+    document.getElementById('statusRacing').style.display   = state === 'racing'   ? 'block' : 'none';
+    document.getElementById('statusFinished').style.display = state === 'finished' ? 'block' : 'none';
+    if (state === 'finished' && winnerName) {
+        document.getElementById('statusFinished').textContent = '🏆 Победитель: ' + winnerName + '!';
+    }
+}
+
+// ── REFRESH ───────────────────────────────────
+function refreshAll() {
+    if (!gameState) return;
+    refreshTeamSelect();
+    refreshStartBtn();
+    refreshAdmin();
+}
+
+function refreshTeamSelect() {
+    if (!gameState || !gameState.teams) return;
+    var sel = document.getElementById('teamSelect');
+    if (!sel) return;
+    var prev = sel.value;
+    sel.innerHTML = '<option value="">-- Выберите стол --</option>';
+    for (var i = 1; i <= gameState.settings.numTeams; i++) {
+        var t = gameState.teams[i];
+        if (!t) continue;
+        var cnt = t.players ? t.players.length : 0;
+        var max = gameState.settings.maxPlayers;
+        var opt = document.createElement('option');
+        opt.value    = i;
+        opt.disabled = cnt >= max;
+        opt.textContent = 'Стол ' + i + (t.name ? ' — ' + t.name : '') + ' (' + cnt + '/' + max + ')';
+        sel.appendChild(opt);
+    }
+    if (prev) sel.value = prev;
+}
+
+function refreshStartBtn() {
+    if (!gameState) return;
+    var cnt = Object.values(gameState.teams).filter(function(t) { return t.players && t.players.length > 0; }).length;
+    document.getElementById('regCount').textContent      = cnt;
+    document.getElementById('startGameBtn').disabled     = cnt < gameState.settings.minTeams;
+}
+
+function refreshAdmin() {
+    if (!gameState || currentView !== 'admin') return;
+    document.getElementById('setNumTeams').value  = gameState.settings.numTeams;
+    document.getElementById('setMaxPlayers').value = gameState.settings.maxPlayers;
+    document.getElementById('setMinTeams').value  = gameState.settings.minTeams;
+    document.getElementById('setSpeedCoef').value = gameState.settings.speedCoef;
+}
+
+// ── VIEW SWITCHER ─────────────────────────────
+function showView(view) {
+    currentView = view;
+    document.getElementById('mainDisplay').style.display     = view === 'display' ? 'block' : 'none';
+    document.getElementById('playerInterface').style.display = view === 'player'  ? 'block' : 'none';
+    document.getElementById('adminPanel').style.display      = view === 'admin'   ? 'block' : 'none';
+
+    ['btnDisplay','btnPlayer','btnAdmin'].forEach(function(id) {
+        document.getElementById(id).classList.remove('active');
+    });
+    var map = { display: 'btnDisplay', player: 'btnPlayer', admin: 'btnAdmin' };
+    document.getElementById(map[view]).classList.add('active');
+
+    registerView();
+    if (gameState) refreshAll();
+}
+
+// ── TEAM SELECT EVENTS ────────────────────────
+document.getElementById('teamSelect').addEventListener('change', function() {
+    var tid = parseInt(this.value);
+    document.getElementById('readyBtn').disabled = true;
+    document.getElementById('newTeamGroup').style.display      = 'none';
+    document.getElementById('existingTeamGroup').style.display = 'none';
+    if (!tid || !gameState) return;
+    var team = gameState.teams[tid];
+    if (!team) return;
+    if (!team.players || team.players.length === 0) {
+        document.getElementById('newTeamGroup').style.display = 'block';
+        document.getElementById('teamNameInput').value = '';
+    } else {
+        document.getElementById('existingTeamName').textContent     = team.name;
+        document.getElementById('existingTeamGroup').style.display  = 'block';
+        document.getElementById('readyBtn').disabled = false;
+    }
+});
+
+document.getElementById('teamNameInput').addEventListener('input', function() {
+    var tid = parseInt(document.getElementById('teamSelect').value);
+    document.getElementById('readyBtn').disabled = !tid || !this.value.trim();
+});
+
+document.getElementById('readyBtn').addEventListener('click', function() {
+    var tid  = parseInt(document.getElementById('teamSelect').value);
+    var name = document.getElementById('teamNameInput').value.trim();
+    if (!tid) return;
+    send({ type: 'register_player', teamId: tid, teamName: name });
+});
+
+document.getElementById('startGameBtn').addEventListener('click', function() {
+    send({ type: 'start_race' });
+});
+
+// ── SHAKE ZONE ────────────────────────────────
+var shakeInterval = null;
+function startShake() {
+    if (!myPlayerId || !gameState || gameState.gameStatus !== 'racing') return;
+    if (shakeInterval) return;
+    shakeInterval = setInterval(function() { send({ type: 'update_shake', intensity: 15 }); }, 50);
+}
+function stopShake() { clearInterval(shakeInterval); shakeInterval = null; }
+
+var sz = document.getElementById('shakeZone');
+sz.addEventListener('mousedown',  startShake);
+sz.addEventListener('mouseup',    stopShake);
+sz.addEventListener('mouseleave', stopShake);
+sz.addEventListener('touchstart', function(e) { e.preventDefault(); startShake(); }, { passive: false });
+sz.addEventListener('touchend',   stopShake);
+sz.addEventListener('touchcancel', stopShake);
+
+// Device motion
+if (window.DeviceMotionEvent) {
+    var lastShake = 0;
+    window.addEventListener('devicemotion', function(e) {
+        if (!myPlayerId || !gameState || gameState.gameStatus !== 'racing') return;
+        var acc = e.accelerationIncludingGravity;
+        var mag = Math.sqrt((acc.x||0)*(acc.x||0) + (acc.y||0)*(acc.y||0) + (acc.z||0)*(acc.z||0));
+        var now = Date.now();
+        if (mag > 20 && now - lastShake > 80) {
+            lastShake = now;
+            send({ type: 'update_shake', intensity: Math.min(mag / 2, 20) });
         }
+    });
+}
 
-        // Handle messages from server
-        function handleServerMessage(data) {
-            switch (data.type) {
-               case 'game_state':
-                    console.log('=== GAME STATE RECEIVED ===');
-                    console.log('Current view:', currentView);
-                    console.log('Data:', data);
-                    
-                    gameState = data.state;
-                    
-                    // КРИТИЧНО: Проверить что данные корректны
-                    if (!gameState || !gameState.settings || !gameState.teams) {
-                        console.error('Invalid game state received!', gameState);
-                        return;
-                    }
-                    
-                    console.log('Game state valid:', gameState.settings.numTeams, 'teams');
-                    
-                    // Обновить отображение
-                    updateDisplay();
-                    
-                    // Если игрок - принудительно обновить список столов несколько раз
-                    if (currentView === 'player') {
-                        console.log('Player view - forcing team select update');
-                        updateTeamSelect(); // Сразу
-                        setTimeout(() => updateTeamSelect(), 100); // Через 100мс
-                        setTimeout(() => updateTeamSelect(), 500); // Через 500мс на всякий случай
-                    }
-                    
-                    console.log('=== GAME STATE PROCESSED ===');
-                    break;
-                    
-                case 'settings_updated':
-                    gameState = data.state;
-                    console.log('Settings updated:', gameState.settings);
-                    
-                    // Обновить отображение
-                    updateDisplay();
-                    
-                    // Если игрок - обновить список столов
-                    if (currentView === 'player') {
-                        setTimeout(() => {
-                            updateTeamSelect();
-                        }, 100);
-                    }
-                    break;
-                    
-                case 'game_reset':
-                    console.log('=== GAME RESET RECEIVED ===');
-                    console.log('Current view:', currentView);
-                    
-                    gameState = data.state;
-                    
-                    // КРИТИЧНО: Проверить что данные корректны
-                    if (!gameState || !gameState.settings || !gameState.teams) {
-                        console.error('Invalid game state after reset!');
-                        // Перезагрузить страницу в крайнем случае
-                        setTimeout(() => window.location.reload(), 1000);
-                        return;
-                    }
-                    
-                    // Сброс экранов для ВСЕХ (особенно для display)
-                    const winnerScreen = document.getElementById('winnerScreen');
-                    const raceScreen = document.getElementById('raceScreen');
-                    const startScreen = document.getElementById('startScreen');
-                    
-                    console.log('Resetting screens...');
-                    if (winnerScreen) {
-                        winnerScreen.style.display = 'none';
-                        console.log('Winner screen hidden');
-                    }
-                    if (raceScreen) {
-                        raceScreen.style.display = 'none';
-                        console.log('Race screen hidden');
-                    }
-                    if (startScreen) {
-                        startScreen.style.display = 'flex';
-                        console.log('Start screen shown');
-                    }
-                    
-                    // ИГРОКИ - перезагрузить страницу
-                    if (currentView === 'player') {
-                        console.log('Player view - reloading page');
-                        alert('Игра сброшена! Страница перезагрузится.');
-                        setTimeout(() => window.location.reload(), 500);
-                        return;
-                    }
-                    
-                    // Обновить для всех остальных
-                    updateDisplay();
-                    
-                    console.log('=== GAME RESET COMPLETE ===');
-                    break;
-                case 'player_registered':
-                    currentPlayerId = data.playerId;
-                    currentTeamId = data.teamId;
-                    document.getElementById('registrationForm').style.display = 'none';
-                    document.getElementById('controlScreen').style.display = 'block';
-                    document.getElementById('currentTeamName').textContent = data.teamName;
-                    break;
+// Intensity update
+setInterval(function() {
+    if (!myPlayerId || !gameState || !gameState.players) return;
+    var p = gameState.players[myPlayerId];
+    if (p) {
+        var v = Math.min((p.shakeIntensity || 0) * 5, 100);
+        document.getElementById('intensityVal').textContent  = Math.round(p.shakeIntensity || 0);
+        document.getElementById('intensityFill').style.width = v + '%';
+    }
+    if (myTeamId && gameState.teams && gameState.teams[myTeamId]) {
+        document.getElementById('activeCount').textContent = gameState.teams[myTeamId].players.length;
+    }
+}, 150);
 
-                case 'race_started':
-                    gameState = data.state;
-                    if (currentView === 'display') {
-                        showRaceScreen();
-                    }
-                    if (currentView === 'player') {
-                        document.getElementById('waitingMessage').style.display = 'none';
-                        document.getElementById('racingMessage').style.display = 'block';
-                    }
-                    break;
+// ── RACE SCREEN ───────────────────────────────
+function openRaceScreen() {
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('raceScreen').style.display  = 'flex';
+    buildTracks();
+    playSound('start');
+}
 
-                case 'race_update':
-                    updateRaceDisplay(data.teams);
-                    if (data.winner) {
-                        // Winner will be shown via race_finished message
-                    }
-                    break;
+function buildTracks() {
+    if (!gameState) return;
+    var container = document.getElementById('raceTracks');
+    container.innerHTML = '';
+    Object.values(gameState.teams).filter(function(t) { return t.players && t.players.length > 0; }).forEach(function(team) {
+        var track  = document.createElement('div'); track.className = 'track'; track.id = 'track-' + team.id;
+        var label  = document.createElement('div'); label.className = 'team-label'; label.textContent = team.name;
+        var finish = document.createElement('div'); finish.className = 'finish-line';
+        var wrap   = document.createElement('div'); wrap.className = 'horse-wrap'; wrap.id = 'horse-' + team.id;
+        var horse  = document.createElement('span'); horse.className = 'horse-emoji'; horse.textContent = '🏇';
+        wrap.appendChild(horse); track.appendChild(label); track.appendChild(finish); track.appendChild(wrap);
+        container.appendChild(track);
+    });
+}
 
-                case 'race_finished':
-                    gameState.gameStatus = 'finished';
-                    gameState.winner = data.winner;
-                    
-                    if (currentView === 'display') {
-                        showWinner(data.winner);
-                    } else if (currentView === 'player') {
-                        // Разблокировать экран
-                        document.body.style.overflow = '';
-                        document.body.style.position = '';
-                        document.body.style.width = '';
-                        
-                        // Показать победителя игрокам
-                        alert(`🏆 ПОБЕДИТЕЛЬ! 🏆\n\nКоманда: ${data.winner.name}\n\nПоздравляем!`);
-                    }
-                    break;
+function updateTracks(teams) {
+    var maxPos = 1000;
+    var trackW = window.innerWidth - 100;
+    teams.forEach(function(t) {
+        var h = document.getElementById('horse-' + t.id);
+        if (h) h.style.left = Math.min((t.position / maxPos) * trackW, trackW - 50) + 'px';
+    });
+    var panel = document.getElementById('statsPanel');
+    panel.innerHTML = '';
+    teams.forEach(function(t) {
+        var d = document.createElement('div'); d.className = 'team-stat';
+        d.innerHTML = '<div class="sname">' + t.name + '</div><div class="splayers">👤 ' + t.playerCount + '</div><div class="sintensity">⚡ ' + Math.round(t.shakeIntensity) + '</div>';
+        panel.appendChild(d);
+    });
+}
 
-                case 'error':
-                    alert(data.message);
-                    break;
-            }
-        }
+// ── WINNER ────────────────────────────────────
+function showWinner(winner) {
+    document.getElementById('winnerName').textContent       = winner.name;
+    document.getElementById('winnerScreen').style.display  = 'flex';
+    fireworks(); playSound('win');
+}
 
-        // Update connection status
-        function updateConnectionStatus(connected) {
-            const status = document.getElementById('connectionStatus');
-            if (connected) {
-                status.textContent = '● Подключено';
-                status.className = 'connection-status connected';
-            } else {
-                status.textContent = '● Отключено';
-                status.className = 'connection-status disconnected';
-            }
-        }
-
-        // Initialize
-        function init() {
-            connect();
-            generateQRCode();
-            setupEventListeners();
-            startShakeDetection();
-
-            // Check URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('view') === 'player') {
-                showView('player');
-            }
-            
-            // Запросить состояние через 1 секунду (после подключения)
-            setTimeout(() => {
-                if (currentView === 'player' && ws && ws.readyState === WebSocket.OPEN) {
-                    console.log('Requesting initial game state for player');
+function fireworks() {
+    var colors = ['#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff','#ff8800'];
+    for (var i = 0; i < 60; i++) {
+        (function(idx) {
+            setTimeout(function() {
+                for (var j = 0; j < 15; j++) {
+                    var f = document.createElement('div'); f.className = 'firework';
+                    f.style.background = colors[Math.floor(Math.random()*colors.length)];
+                    f.style.left = Math.random()*100 + '%'; f.style.top = Math.random()*100 + '%';
+                    f.style.setProperty('--tx', (Math.random()-0.5)*500 + 'px');
+                    f.style.setProperty('--ty', (Math.random()-0.5)*500 + 'px');
+                    document.getElementById('winnerScreen').appendChild(f);
+                    setTimeout(function() { if (f.parentNode) f.parentNode.removeChild(f); }, 1000);
                 }
-            }, 1000);
-        }
+            }, idx * 80);
+        })(i);
+    }
+}
 
-        // Generate QR Code
-        function generateQRCode() {
-            const qrcodeContainer = document.getElementById('qrcodeContainer');
-            qrcodeContainer.innerHTML = '';
-            const currentUrl = window.location.href.split('?')[0];
-            new QRCode(qrcodeContainer, {
-                text: currentUrl + '?view=player',
-                width: 256,
-                height: 256,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
+// ── SOUND ─────────────────────────────────────
+function playSound(type) {
+    try {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (type === 'start') {
+            var o = ctx.createOscillator(), g = ctx.createGain();
+            o.connect(g); g.connect(ctx.destination);
+            o.frequency.value = 880;
+            g.gain.setValueAtTime(0.3, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            o.start(); o.stop(ctx.currentTime + 0.5);
+        } else if (type === 'win') {
+            [600,800,1000].forEach(function(freq, i) {
+                setTimeout(function() {
+                    var o = ctx.createOscillator(), g = ctx.createGain();
+                    o.connect(g); g.connect(ctx.destination);
+                    o.frequency.value = freq;
+                    g.gain.setValueAtTime(0.25, ctx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                    o.start(); o.stop(ctx.currentTime + 0.4);
+                }, i * 180);
             });
         }
+    } catch(e) {}
+}
 
-        // Setup Event Listeners
-        function setupEventListeners() {
-            // Admin settings
+// ── ADMIN ─────────────────────────────────────
+function saveSettings() {
+    var n  = parseInt(document.getElementById('setNumTeams').value);
+    var mp = parseInt(document.getElementById('setMaxPlayers').value);
+    var mt = parseInt(document.getElementById('setMinTeams').value);
+    var sc = parseFloat(document.getElementById('setSpeedCoef').value);
+    send({ type: 'update_settings', numTeams: n, maxPlayers: mp, minTeams: mt, speedCoef: sc });
+    alert('✅ Сохранено!\nСтолов: ' + n + '\nМакс. игроков: ' + mp + '\nМин. команд: ' + mt + '\nСкорость: ' + sc);
+}
 
-            // Team selection
-            document.getElementById('teamSelect').addEventListener('change', handleTeamSelect);
-            
-            // Team name input
-            document.getElementById('teamName').addEventListener('input', () => {
-                const btn = document.getElementById('readyBtn');
-                const teamId = parseInt(document.getElementById('teamSelect').value);
-                const teamName = document.getElementById('teamName').value.trim();
-                btn.disabled = !teamId || !teamName;
-            });
+function resetGame() {
+    if (confirm('Сбросить игру? Все данные будут удалены.')) {
+        send({ type: 'reset_game' });
+    }
+}
 
-            // Ready button
-            document.getElementById('readyBtn').addEventListener('click', registerPlayer);
+// ── QR CODE ───────────────────────────────────
+function generateQR() {
+    var container = document.getElementById('qrcodeContainer');
+    container.innerHTML = '';
+    var url = location.href.split('?')[0] + '?view=player';
+    new QRCode(container, { text: url, width: 220, height: 220, colorDark: '#000000', colorLight: '#ffffff' });
+}
 
-            // Start game button
-            document.getElementById('startGameBtn').addEventListener('click', startRace);
-
-            // Блокировка случайных действий только на зоне тряски
-            const shakeZone = document.getElementById('shakeZone');
-            
-            // Отключить контекстное меню на долгое нажатие
-            shakeZone.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                return false;
-            });
-            
-            // Отключить выделение текста
-            shakeZone.addEventListener('selectstart', (e) => {
-                e.preventDefault();
-                return false;
-            });
-            
-            let clickInterval = null;
-```
-
----
-
-## ПРОСТОЕ РЕШЕНИЕ БЕЗ РИСКОВ:
-
-Если хотите минимум изменений - просто оставьте:
-
-1. **CSS класс `.no-touch`** - он уже работает
-2. **Удалите** всё про `touchmove` и блокировку body
-3. **Оставьте** только кнопку "Вернуться в игру"
-
----
-
-## ⚡ БЫСТРЫЙ COMMIT:
-
-Замените `case 'race_started'` на простую версию (без блокировки body) и закоммитьте:
-```
-Fix: Remove touch blocking that caused freeze
-            // Shake zone interaction
-            const shakeZone = document.getElementById('shakeZone');
-            let clickInterval = null;
-            
-            shakeZone.addEventListener('mousedown', () => {
-                if (gameState && gameState.gameStatus === 'racing') {
-                    clickInterval = setInterval(() => {
-                        sendShakeIntensity(15);
-                    }, 50);
-                }
-            });
-            
-            shakeZone.addEventListener('mouseup', () => {
-                clearInterval(clickInterval);
-            });
-            
-            shakeZone.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                if (gameState && gameState.gameStatus === 'racing') {
-                    clickInterval = setInterval(() => {
-                        sendShakeIntensity(15);
-                    }, 50);
-                }
-            });
-            
-            shakeZone.addEventListener('touchend', () => {
-                clearInterval(clickInterval);
-            });
-        }
-
-        // Handle Team Select
-        function handleTeamSelect() {
-            if (!gameState) return;
-
-            const teamId = parseInt(document.getElementById('teamSelect').value);
-            const readyBtn = document.getElementById('readyBtn');
-            
-            if (!teamId) {
-                document.getElementById('teamNameGroup').style.display = 'none';
-                document.getElementById('existingTeamName').style.display = 'none';
-                readyBtn.disabled = true;
-                return;
-            }
-
-            const team = gameState.teams[teamId];
-            
-            if (team.players.length === 0) {
-                // First player - show team name input
-                document.getElementById('teamNameGroup').style.display = 'block';
-                document.getElementById('existingTeamName').style.display = 'none';
-                document.getElementById('teamName').value = '';
-                readyBtn.disabled = true;
-            } else {
-                // Not first player - show existing team name
-                document.getElementById('teamNameGroup').style.display = 'none';
-                document.getElementById('existingTeamName').style.display = 'block';
-                document.getElementById('displayTeamName').textContent = team.name;
-                readyBtn.disabled = false;
-            }
-        }
-
-        // Register Player
-        function registerPlayer() {
-            const teamId = parseInt(document.getElementById('teamSelect').value);
-            const teamName = document.getElementById('teamName').value.trim();
-            
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'register_player',
-                    teamId: teamId,
-                    teamName: teamName
-                }));
-            }
-        }
-
-    // Update Settings
-        function saveSettings() {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                const numTeams = parseInt(document.getElementById('numTeams').value);
-                const maxPlayers = parseInt(document.getElementById('maxPlayers').value);
-                const minTeams = parseInt(document.getElementById('minTeams').value);
-                const speedCoef = parseFloat(document.getElementById('speedCoef').value);
-
-                ws.send(JSON.stringify({
-                    type: 'update_settings',
-                    numTeams: numTeams,
-                    maxPlayers: maxPlayers,
-                    minTeams: minTeams,
-                    speedCoef: speedCoef
-                }));
-
-                alert('✅ Параметры сохранены!\n\nНовые настройки:\n' +
-                      `- Столов: ${numTeams}\n` +
-                      `- Игроков на команду: ${maxPlayers}\n` +
-                      `- Минимум команд: ${minTeams}\n` +
-                      `- Скорость: ${speedCoef}`);
-            } else {
-                alert('❌ Ошибка: нет подключения к серверу');
-            }
-        }
-
-        function updateSettings() {
-            saveSettings();
-        }
-
-        // Start Race
-        function startRace() {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: 'start_race' }));
-            }
-        }
-
-        // Reset Game
-        function resetGame() {
-            if (confirm('Вы уверены, что хотите сбросить игру? Все данные будут удалены.')) {
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'reset_game' }));
-                }
-            }
-        }
-
-        // Show Race Screen
-        function showRaceScreen() {
-            document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('raceScreen').style.display = 'block';
-            createRaceTracks();
-            playSound('start');
-        }
-
-        // Create Race Tracks
-        function createRaceTracks() {
-            if (!gameState) return;
-
-            const tracksContainer = document.getElementById('raceTracks');
-            tracksContainer.innerHTML = '';
-
-            const activeTeams = Object.values(gameState.teams).filter(t => t.players.length > 0);
-            
-            activeTeams.forEach(team => {
-                const track = document.createElement('div');
-                track.className = 'track';
-                track.id = `track-${team.id}`;
-                
-                const label = document.createElement('div');
-                label.className = 'team-label';
-                label.textContent = team.name;
-                
-                const finishLine = document.createElement('div');
-                finishLine.className = 'finish-line';
-                
-                const horseContainer = document.createElement('div');
-                horseContainer.className = 'horse-container';
-                horseContainer.id = `horse-${team.id}`;
-                
-                const horse = document.createElement('div');
-                horse.className = 'horse';
-                horse.textContent = '🏇';
-                
-                horseContainer.appendChild(horse);
-                track.appendChild(label);
-                track.appendChild(finishLine);
-                track.appendChild(horseContainer);
-                tracksContainer.appendChild(track);
-            });
-        }
-
-        // Update Race Display
-        function updateRaceDisplay(teams) {
-            const trackWidth = window.innerWidth - 150;
-            const maxPosition = 1000; // Virtual track width from server
-            
-            teams.forEach(team => {
-                const horseElement = document.getElementById(`horse-${team.id}`);
-                if (horseElement) {
-                    const displayPosition = (team.position / maxPosition) * trackWidth;
-                    horseElement.style.left = Math.min(displayPosition, trackWidth) + 'px';
-                }
-            });
-
-            // Update stats panel
-            const panel = document.getElementById('statsPanel');
-            panel.innerHTML = '';
-            
-            teams.forEach(team => {
-                const stat = document.createElement('div');
-                stat.className = 'team-stats';
-                
-                stat.innerHTML = `
-                    <div class="team-name">${team.name}</div>
-                    <div class="player-count">Игроков: ${team.playerCount}</div>
-                    <div class="shake-intensity">⚡ ${Math.round(team.shakeIntensity)}</div>
-                `;
-                
-                panel.appendChild(stat);
-            });
-        }
-
-        // Show Winner
-        function showWinner(winner) {
-            document.getElementById('winnerTeamName').textContent = winner.name;
-            document.getElementById('winnerScreen').style.display = 'flex';
-            playSound('win');
-            createFireworks();
-        }
-
-        // Create Fireworks
-        function createFireworks() {
-            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
-            
-            for (let i = 0; i < 50; i++) {
-                setTimeout(() => {
-                    for (let j = 0; j < 20; j++) {
-                        const firework = document.createElement('div');
-                        firework.className = 'firework';
-                        firework.style.background = colors[Math.floor(Math.random() * colors.length)];
-                        firework.style.left = Math.random() * 100 + '%';
-                        firework.style.top = Math.random() * 100 + '%';
-                        firework.style.setProperty('--tx', (Math.random() - 0.5) * 400 + 'px');
-                        firework.style.setProperty('--ty', (Math.random() - 0.5) * 400 + 'px');
-                        
-                        document.getElementById('winnerScreen').appendChild(firework);
-                        
-                        setTimeout(() => firework.remove(), 1000);
-                    }
-                }, i * 100);
-            }
-        }
-
-        // Play Sound
-        function playSound(type) {
-            // Using Web Audio API for sounds
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
-            if (type === 'start') {
-                // Start sound
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.value = 800;
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.5);
-            } else if (type === 'win') {
-                // Win sound
-                for (let i = 0; i < 3; i++) {
-                    setTimeout(() => {
-                        const oscillator = audioContext.createOscillator();
-                        const gainNode = audioContext.createGain();
-                        
-                        oscillator.connect(gainNode);
-                        gainNode.connect(audioContext.destination);
-                        
-                        oscillator.frequency.value = 600 + i * 200;
-                        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-                        
-                        oscillator.start(audioContext.currentTime);
-                        oscillator.stop(audioContext.currentTime + 0.3);
-                    }, i * 150);
-                }
-            }
-        }
-
-        // Return to game (if accidentally left)
-        function returnToGame() {
-            // Просто скрыть кнопку, игра продолжается
-            document.getElementById('backToGameBtn').style.display = 'none';
-            
-            // Можно добавить вибрацию для подтверждения
-            if (navigator.vibrate) {
-                navigator.vibrate(100);
-            }
-        }
-
-        // Detect if user left the page
-        let pageHidden = false;
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                pageHidden = true;
-            } else {
-                // Вернулись на страницу
-                if (pageHidden && currentPlayerId && gameState && gameState.gameStatus === 'racing') {
-                    // Показать кнопку возврата
-                    document.getElementById('backToGameBtn').style.display = 'block';
-                    pageHidden = false;
-                }
-            }
-        });
-        
-        // Start Shake Detection
-        function startShakeDetection() {
-            if (window.DeviceMotionEvent) {
-                let lastShakeTime = 0;
-                
-                window.addEventListener('devicemotion', (event) => {
-                    if (!currentPlayerId || !gameState || gameState.gameStatus !== 'racing') return;
-
-                    const acceleration = event.accelerationIncludingGravity;
-                    const x = acceleration.x || 0;
-                    const y = acceleration.y || 0;
-                    const z = acceleration.z || 0;
-
-                    const magnitude = Math.sqrt(x*x + y*y + z*z);
-                    
-                    const now = Date.now();
-                    if (magnitude > 20 && now - lastShakeTime > 100) {
-                        lastShakeTime = now;
-                        const intensity = Math.min(magnitude / 2, 20);
-                        sendShakeIntensity(intensity);
-                    }
-                });
-            }
-
-            // Update player display
-            setInterval(() => {
-                if (currentPlayerId && gameState) {
-                    const player = gameState.players[currentPlayerId];
-                    if (player) {
-                        document.getElementById('intensityValue').textContent = Math.round(player.shakeIntensity || 0);
-                        document.getElementById('intensityFill').style.width = Math.min((player.shakeIntensity || 0) * 5, 100) + '%';
-                    }
-
-                    const team = gameState.teams[currentTeamId];
-                    if (team) {
-                        document.getElementById('activePlayersCount').textContent = team.players.length;
-                    }
-                }
-            }, 100);
-        }
-
-        // Send Shake Intensity
-        function sendShakeIntensity(intensity) {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'update_shake',
-                    intensity: intensity
-                }));
-            }
-        }
-       
-        // Update Display
-        function updateDisplay() {
-            if (!gameState) return;
-
-            // Update team select
-            updateTeamSelect();
-            
-            // Update start button
-            const registeredCount = Object.values(gameState.teams).filter(t => t.players.length > 0).length;
-            document.getElementById('registeredTeams').textContent = registeredCount;
-            document.getElementById('startGameBtn').disabled = registeredCount < gameState.settings.minTeams;
-
-            // Update admin settings
-            if (currentView === 'admin') {
-                document.getElementById('numTeams').value = gameState.settings.numTeams;
-                document.getElementById('maxPlayers').value = gameState.settings.maxPlayers;
-                document.getElementById('minTeams').value = gameState.settings.minTeams;
-                document.getElementById('speedCoef').value = gameState.settings.speedCoef;
-            }
-        }
-
-        // Update Team Select
-        function updateTeamSelect() {
-            if (!gameState || !gameState.settings || !gameState.teams) {
-                console.log('updateTeamSelect: gameState not ready', gameState);
-                return;
-            }
-            
-            const select = document.getElementById('teamSelect');
-            if (!select) {
-                console.log('updateTeamSelect: select element not found');
-                return;
-            }
-            
-            console.log('updateTeamSelect: Updating with', gameState.settings.numTeams, 'teams');
-            
-            select.innerHTML = '<option value="">-- Выберите стол --</option>';
-            
-            for (let i = 1; i <= gameState.settings.numTeams; i++) {
-                const team = gameState.teams[i];
-                if (!team) {
-                    console.log('updateTeamSelect: Team', i, 'not found in gameState.teams');
-                    continue;
-                }
-                
-                const playerCount = team.players.length;
-                const maxPlayers = gameState.settings.maxPlayers;
-                const disabled = playerCount >= maxPlayers;
-                
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = `Стол ${i}${team.name ? ' - ' + team.name : ''} (${playerCount}/${maxPlayers})`;
-                option.disabled = disabled;
-                select.appendChild(option);
-            }
-
-            // Update start button
-            const registeredCount = Object.values(gameState.teams).filter(t => t.players.length > 0).length;
-            document.getElementById('registeredTeams').textContent = registeredCount;
-            document.getElementById('startGameBtn').disabled = registeredCount < gameState.settings.minTeams;
-
-            // Update admin settings
-            if (currentView === 'admin') {
-                document.getElementById('numTeams').value = gameState.settings.numTeams;
-                document.getElementById('maxPlayers').value = gameState.settings.maxPlayers;
-                document.getElementById('minTeams').value = gameState.settings.minTeams;
-                document.getElementById('speedCoef').value = gameState.settings.speedCoef;
-            }
-        }
-
-        // Show View
-        // Show View
-        function showView(view) {
-            currentView = view;
-            
-            document.getElementById('mainDisplay').style.display = view === 'display' ? 'block' : 'none';
-            document.getElementById('playerInterface').style.display = view === 'player' ? 'block' : 'none';
-            document.getElementById('adminPanel').style.display = view === 'admin' ? 'block' : 'none';
-            
-            document.querySelectorAll('.view-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            if (event && event.target) {
-                event.target.classList.add('active');
-            }
-
-            // Re-register with server and request state
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                if (view === 'display') {
-                    ws.send(JSON.stringify({ type: 'register_display' }));
-                } else if (view === 'admin') {
-                    ws.send(JSON.stringify({ type: 'register_admin' }));
-                } else if (view === 'player') {
-                    console.log('=== PLAYER VIEW OPENED ===');
-                    // Запросить состояние с сервера
-                    ws.send(JSON.stringify({ type: 'request_state' }));
-                    console.log('Requested game state from server');
-                }
-            }
-        }
-
-        // Start
-        window.addEventListener('load', init);
-    </script>
+// ── INIT ──────────────────────────────────────
+window.addEventListener('load', function() {
+    generateQR();
+    var params = new URLSearchParams(location.search);
+    var v = params.get('view');
+    if (v === 'player' || v === 'admin') showView(v);
+    connect();
+});
+</script>
 </body>
 </html>
