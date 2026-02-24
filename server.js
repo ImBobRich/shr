@@ -17,7 +17,7 @@ const gameState = {
         maxPlayers: 3,
         minTeams: 1,  // Changed from 2 to 1
         speedCoef: 1,
-        baseSpeed: 1000 / 300  // Slower speed (was 1000/30)
+        baseSpeed: 1000 / 270  // Very slow speed
     },
     teams: {},
     players: {},
@@ -112,6 +112,37 @@ wss.on('connection', (ws) => {
                 case 'request_state':
                     ws.send(JSON.stringify({ type: 'game_state', state: gameState }));
                     console.log('State sent on request');
+                    break;
+
+                case 'reconnect_player':
+                    // Игрок пытается переподключиться
+                    const reconnectPlayerId = data.playerId;
+                    const reconnectTeamId   = data.teamId;
+                    
+                    // Проверяем, существует ли игрок
+                    if (gameState.players[reconnectPlayerId]) {
+                        playerId   = reconnectPlayerId;
+                        clientType = 'player';
+                        clients.set(playerId, ws);
+                        
+                        const team = gameState.teams[reconnectTeamId];
+                        
+                        ws.send(JSON.stringify({
+                            type: 'player_reconnected',
+                            playerId: playerId,
+                            teamId: reconnectTeamId,
+                            teamName: team ? team.name : 'Неизвестная команда',
+                            gameStatus: gameState.gameStatus
+                        }));
+                        
+                        console.log(`Player ${playerId} reconnected to team ${reconnectTeamId}`);
+                    } else {
+                        // Игрок не найден — нужна новая регистрация
+                        ws.send(JSON.stringify({
+                            type: 'error',
+                            message: 'Сессия истекла. Пожалуйста, зарегистрируйтесь заново.'
+                        }));
+                    }
                     break;
 
                 case 'register_player':
