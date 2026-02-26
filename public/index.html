@@ -3,11 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>СОЛЛАЛЬ 2026. УРАЛЬСКИЕ СКАЧКИ</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #1a1a2e; overflow-x: hidden; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #1a1a2e; 
+            overflow-x: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
 
         #connectionStatus {
             position: fixed; top: 10px; right: 10px;
@@ -83,6 +94,28 @@
         }
         .rules-box h3 { font-size: 26px; color: #2c3e50; margin-bottom: 12px; }
         .rules-box ol { text-align: left; font-size: 20px; line-height: 1.8; color: #34495e; }
+        
+        .iphone-note {
+            background: rgba(255,243,205,0.95);
+            border: 2px solid #ffc107;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            max-width: 500px;
+        }
+        .iphone-note-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 8px;
+        }
+        .iphone-note-text {
+            font-size: 15px;
+            color: #856404;
+            line-height: 1.6;
+            text-align: left;
+        }
+        
         #startGameBtn {
             padding: 18px 60px; font-size: 32px; font-weight: bold;
             background: linear-gradient(45deg, #2ecc71, #27ae60);
@@ -255,6 +288,12 @@
         .btn-back:hover { background:#7f8c8d; }
         .btn-reset { flex:1; padding:14px; font-size:16px; background:#e74c3c; color:white; border:none; border-radius:10px; cursor:pointer; min-width:140px; }
         .btn-reset:hover { background:#c0392b; }
+        
+        @media (max-width: 768px) {
+            .game-title { font-size: 48px; }
+            .rules-box ol { font-size: 18px; }
+            .iphone-note-text { font-size: 14px; }
+        }
     </style>
 </head>
 <body>
@@ -278,6 +317,13 @@
                 <li>Выбери свою команду</li>
                 <li>Играй — тряси телефон!</li>
             </ol>
+        </div>
+        <div class="iphone-note">
+            <div class="iphone-note-title">📱 Для пользователей iPhone:</div>
+            <div class="iphone-note-text">
+                Если при тряске появляется «Отменить?» — отключите функцию:<br>
+                <strong>Настройки → Универсальный доступ → Touch → Встряхивание для отмены → ВЫКЛ</strong>
+            </div>
         </div>
         <button id="startGameBtn" disabled>СТАРТ</button>
         <div id="teamsCount">Зарегистрировано команд: <strong id="regCount">0</strong></div>
@@ -358,6 +404,7 @@
 
 <script>
 var ws=null,reconnectTimer=null,currentView='display',gameState=null,myPlayerId=null,myTeamId=null;
+var motionPermissionGranted=false;
 
 function connect(){var proto=location.protocol==='https:'?'wss:':'ws:';ws=new WebSocket(proto+'//'+location.host);ws.onopen=onOpen;ws.onmessage=function(e){try{handleMsg(JSON.parse(e.data));}catch(ex){console.error(ex);}};ws.onclose=function(){setStatus(false);if(!reconnectTimer)reconnectTimer=setInterval(connect,3000);};ws.onerror=function(){ws.close();};}
 
@@ -385,8 +432,7 @@ function handleMsg(msg){
             document.getElementById('regForm').style.display='none';
             document.getElementById('controlScreen').style.display='block';
             document.getElementById('myTeamName').textContent=msg.teamName;
-            
-            setTimeout(function(){requestMotionPermission();},500);
+            setTimeout(function(){requestMotionPermission();},800);
             break;
             
         case'player_reconnected':
@@ -403,8 +449,7 @@ function handleMsg(msg){
             }else{
                 setStatus2('waiting');
             }
-            
-            setTimeout(function(){requestMotionPermission();},500);
+            setTimeout(function(){requestMotionPermission();},800);
             alert('✅ Вы вернулись в игру!\n\nКоманда: '+msg.teamName);
             break;
             
@@ -468,52 +513,80 @@ sz.addEventListener('touchstart',function(e){e.preventDefault();startShake();},{
 sz.addEventListener('touchend',stopShake);
 sz.addEventListener('touchcancel',stopShake);
 
+function isIOS(){return/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;}
+
 function requestMotionPermission(){
+    console.log('Requesting motion permission...');
     if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
-        console.log('iOS detected - requesting permission...');
+        console.log('iOS 13+ detected');
         DeviceMotionEvent.requestPermission()
             .then(function(response){
-                console.log('Permission response:',response);
+                console.log('Permission:',response);
                 if(response==='granted'){
-                    console.log('✅ Motion permission granted!');
+                    motionPermissionGranted=true;
+                    console.log('✅ Permission granted');
                     startMotionDetection();
                 }else{
-                    alert('Для работы игры нужен доступ к датчику движения.\n\nНажмите ОК и разрешите доступ.');
+                    console.error('❌ Permission denied');
+                    showMotionError();
                 }
             })
             .catch(function(err){
                 console.error('Permission error:',err);
-                alert('Ошибка доступа к датчику движения. Попробуйте обновить страницу.');
+                showMotionError();
             });
-    }else{
-        console.log('Non-iOS or old iOS - starting motion detection directly');
+    }else if(window.DeviceMotionEvent){
+        console.log('Older iOS/Android');
+        motionPermissionGranted=true;
         startMotionDetection();
+    }else{
+        console.error('Motion not supported');
+        alert('Датчик движения не поддерживается.\n\nИспользуйте кнопку ТРЯСИ!');
     }
 }
 
+function showMotionError(){
+    alert('⚠️ Ошибка доступа к датчику движения.\n\n'+
+          '1. Обновите страницу\n'+
+          '2. Разрешите доступ к датчику\n\n'+
+          'Или используйте кнопку ТРЯСИ!');
+}
+
 function startMotionDetection(){
-    if(window.DeviceMotionEvent){
-        var lastShake=0;
-        window.addEventListener('devicemotion',function(e){
-            if(!myPlayerId||!gameState||gameState.gameStatus!=='racing')return;
-            var acc=e.accelerationIncludingGravity;
-            if(!acc){
-                console.warn('No acceleration data');
-                return;
-            }
-            var mag=Math.sqrt((acc.x||0)*(acc.x||0)+(acc.y||0)*(acc.y||0)+(acc.z||0)*(acc.z||0));
-            var now=Date.now();
-            if(mag>15&&now-lastShake>80){
-                lastShake=now;
-                var intensity=Math.min(mag/2,20);
-                console.log('Shake! Mag:',mag.toFixed(2),'Int:',intensity.toFixed(2));
-                send({type:'update_shake',intensity:intensity});
-            }
-        });
-        console.log('✅ Motion detection started');
-    }else{
-        console.warn('DeviceMotionEvent not supported');
+    console.log('Starting motion...');
+    
+    if(isIOS()){
+        document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
     }
+    
+    if(!window.DeviceMotionEvent){
+        console.error('DeviceMotionEvent unavailable');
+        return;
+    }
+    
+    var lastShake=0;
+    window.addEventListener('devicemotion',function(e){
+        if(!myPlayerId||!gameState||gameState.gameStatus!=='racing')return;
+        if(!motionPermissionGranted)return;
+        
+        var acc=e.accelerationIncludingGravity;
+        if(!acc)return;
+        
+        var x=acc.x||0;
+        var y=acc.y||0;
+        var z=acc.z||0;
+        var mag=Math.sqrt(x*x+y*y+z*z);
+        var now=Date.now();
+        
+        if(mag>15&&now-lastShake>100){
+            lastShake=now;
+            var intensity=Math.min(mag/2,20);
+            console.log('Shake! Mag:',mag.toFixed(1),'Int:',intensity.toFixed(1));
+            send({type:'update_shake',intensity:intensity});
+        }
+    });
+    
+    console.log('✅ Motion active');
 }
 
 setInterval(function(){if(!myPlayerId||!gameState||!gameState.players)return;var p=gameState.players[myPlayerId];if(p){var v=Math.min((p.shakeIntensity||0)*5,100);document.getElementById('intensityVal').textContent=Math.round(p.shakeIntensity||0);document.getElementById('intensityFill').style.width=v+'%';}if(myTeamId&&gameState.teams&&gameState.teams[myTeamId]){document.getElementById('activeCount').textContent=gameState.teams[myTeamId].players.length;}},150);
@@ -536,17 +609,17 @@ function resetGame(){if(confirm('Сбросить игру? Все данные 
 
 function generateQR(){var container=document.getElementById('qrcodeContainer');container.innerHTML='';var url=location.href.split('?')[0]+'?view=player';new QRCode(container,{text:url,width:220,height:220,colorDark:'#000000',colorLight:'#ffffff'});}
 
-function enableRacingMode(){console.log('🔒 Enabling racing mode...');document.body.classList.add('racing-mode');document.body.style.overflow='hidden';document.body.style.position='fixed';document.body.style.width='100%';document.body.style.height='100%';var blocker=document.getElementById('screenBlocker');if(blocker){blocker.classList.add('active');console.log('Blocker activated');}var sz=document.getElementById('shakeZone');if(sz)sz.classList.add('race-active');window.onbeforeunload=function(){return'Гонка идёт! Вы уверены, что хотите выйти?';};document.addEventListener('touchmove',preventTouch,{passive:false});document.addEventListener('touchstart',preventTouch,{passive:false});document.addEventListener('contextmenu',preventContext);console.log('🔒 Racing mode enabled!');}
+function enableRacingMode(){console.log('🔒 Racing mode...');document.body.classList.add('racing-mode');document.body.style.overflow='hidden';document.body.style.position='fixed';document.body.style.width='100%';document.body.style.height='100%';document.body.style.webkitUserSelect='none';document.body.style.webkitTouchCallout='none';var blocker=document.getElementById('screenBlocker');if(blocker)blocker.classList.add('active');var sz=document.getElementById('shakeZone');if(sz)sz.classList.add('race-active');window.onbeforeunload=function(){return'Гонка идёт!';};document.addEventListener('touchmove',preventTouch,{passive:false});document.addEventListener('touchstart',preventTouch,{passive:false});document.addEventListener('contextmenu',preventContext);console.log('🔒 Enabled');}
 
-function disableRacingMode(){console.log('🔓 Disabling racing mode...');document.body.classList.remove('racing-mode');document.body.style.overflow='';document.body.style.position='';document.body.style.width='';document.body.style.height='';var blocker=document.getElementById('screenBlocker');if(blocker)blocker.classList.remove('active');var sz=document.getElementById('shakeZone');if(sz)sz.classList.remove('race-active');window.onbeforeunload=null;document.removeEventListener('touchmove',preventTouch);document.removeEventListener('touchstart',preventTouch);document.removeEventListener('contextmenu',preventContext);console.log('🔓 Racing mode disabled!');}
+function disableRacingMode(){console.log('🔓 Disabling...');document.body.classList.remove('racing-mode');document.body.style.overflow='';document.body.style.position='';document.body.style.width='';document.body.style.height='';document.body.style.webkitUserSelect='';document.body.style.webkitTouchCallout='';var blocker=document.getElementById('screenBlocker');if(blocker)blocker.classList.remove('active');var sz=document.getElementById('shakeZone');if(sz)sz.classList.remove('race-active');window.onbeforeunload=null;document.removeEventListener('touchmove',preventTouch);document.removeEventListener('touchstart',preventTouch);document.removeEventListener('contextmenu',preventContext);console.log('🔓 Disabled');}
 
 function preventTouch(e){if(e.target.closest('#shakeZone'))return;e.preventDefault();e.stopPropagation();return false;}
 
 function preventContext(e){e.preventDefault();return false;}
 
-function clearPlayerData(){try{localStorage.removeItem('horserace_playerId');localStorage.removeItem('horserace_teamId');localStorage.removeItem('horserace_teamName');console.log('Player data cleared');}catch(e){}}
+function clearPlayerData(){try{localStorage.removeItem('horserace_playerId');localStorage.removeItem('horserace_teamId');localStorage.removeItem('horserace_teamName');}catch(e){}}
 
-function tryRestorePlayer(){try{var savedPlayerId=localStorage.getItem('horserace_playerId');var savedTeamId=localStorage.getItem('horserace_teamId');var savedTeamName=localStorage.getItem('horserace_teamName');console.log('Checking saved session:',savedPlayerId,savedTeamId,savedTeamName);if(savedPlayerId&&savedTeamId&&savedTeamName){var restore=confirm('Вы были в игре!\n\nКоманда: '+savedTeamName+'\n\nВосстановить сессию?');if(restore){myPlayerId=savedPlayerId;myTeamId=parseInt(savedTeamId);console.log('Restoring session:',myPlayerId,myTeamId);setTimeout(function(){document.getElementById('regForm').style.display='none';document.getElementById('controlScreen').style.display='block';document.getElementById('myTeamName').textContent=savedTeamName;},500);setTimeout(function(){if(ws&&ws.readyState===WebSocket.OPEN){console.log('Sending reconnect_player...');send({type:'reconnect_player',playerId:myPlayerId,teamId:myTeamId});}else{console.log('WebSocket not ready, will retry...');setTimeout(function(){if(ws&&ws.readyState===WebSocket.OPEN){send({type:'reconnect_player',playerId:myPlayerId,teamId:myTeamId});}},2000);}},1500);}else{clearPlayerData();}}}catch(e){console.error('Restore error:',e);}}
+function tryRestorePlayer(){try{var savedPlayerId=localStorage.getItem('horserace_playerId');var savedTeamId=localStorage.getItem('horserace_teamId');var savedTeamName=localStorage.getItem('horserace_teamName');if(savedPlayerId&&savedTeamId&&savedTeamName){var restore=confirm('Вы были в игре!\n\nКоманда: '+savedTeamName+'\n\nВосстановить?');if(restore){myPlayerId=savedPlayerId;myTeamId=parseInt(savedTeamId);setTimeout(function(){document.getElementById('regForm').style.display='none';document.getElementById('controlScreen').style.display='block';document.getElementById('myTeamName').textContent=savedTeamName;},500);setTimeout(function(){if(ws&&ws.readyState===WebSocket.OPEN){send({type:'reconnect_player',playerId:myPlayerId,teamId:myTeamId});}else{setTimeout(function(){if(ws&&ws.readyState===WebSocket.OPEN){send({type:'reconnect_player',playerId:myPlayerId,teamId:myTeamId});}},2000);}},1500);}else{clearPlayerData();}}}catch(e){}}
 
 window.addEventListener('load',function(){generateQR();var params=new URLSearchParams(location.search);var v=params.get('view');if(v==='player'){tryRestorePlayer();}if(v==='player'||v==='admin')showView(v);connect();});
 </script>
