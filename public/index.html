@@ -77,47 +77,69 @@
         #startScreen {
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            height: 100%; padding: 30px; text-align: center;
+            height: 100%; padding: 20px; text-align: center;
         }
         .game-title {
-            font-size: 64px; font-weight: bold; line-height: 1.2; margin-bottom: 20px;
+            font-size: 56px; font-weight: bold; line-height: 1.1; margin-bottom: 20px;
             background: linear-gradient(45deg, #d4af37, #ffd700);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
+        
+        .content-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .horse-decoration {
+            font-size: 120px;
+            animation: horseHop 2s ease-in-out infinite;
+        }
+        
+        @keyframes horseHop {
+            0%, 100% { transform: translateY(0) rotate(-5deg); }
+            50% { transform: translateY(-15px) rotate(-5deg); }
+        }
+        
         #qrcodeContainer {
             background: white; padding: 20px; border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2); margin-bottom: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
         }
         .rules-box {
-            background: rgba(255,255,255,0.92); padding: 20px 30px;
-            border-radius: 12px; margin-bottom: 20px; max-width: 500px;
+            background: rgba(255,255,255,0.92); padding: 15px 20px;
+            border-radius: 12px;
+            max-width: 280px;
+            text-align: left;
         }
-        .rules-box h3 { font-size: 26px; color: #2c3e50; margin-bottom: 12px; }
-        .rules-box ol { text-align: left; font-size: 20px; line-height: 1.8; color: #34495e; }
+        .rules-box h3 { font-size: 22px; color: #2c3e50; margin-bottom: 10px; }
+        .rules-box ol { font-size: 17px; line-height: 1.6; color: #34495e; }
         
         .iphone-note {
             background: rgba(255,243,205,0.95);
             border: 2px solid #ffc107;
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
             max-width: 500px;
         }
         .iphone-note-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: #856404;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .iphone-note-text {
-            font-size: 15px;
+            font-size: 13px;
             color: #856404;
-            line-height: 1.6;
+            line-height: 1.5;
             text-align: left;
         }
         
         #startGameBtn {
-            padding: 18px 60px; font-size: 32px; font-weight: bold;
+            padding: 15px 50px; font-size: 28px; font-weight: bold;
             background: linear-gradient(45deg, #2ecc71, #27ae60);
             color: white; border: none; border-radius: 50px; cursor: pointer;
             box-shadow: 0 5px 20px rgba(0,0,0,0.3); transition: all 0.3s;
@@ -125,8 +147,8 @@
         #startGameBtn:hover:not(:disabled) { transform: translateY(-3px); }
         #startGameBtn:disabled { background: #95a5a6; cursor: not-allowed; }
         #teamsCount {
-            margin-top: 15px; font-size: 20px; color: #2c3e50;
-            background: rgba(255,255,255,0.8); padding: 8px 20px; border-radius: 20px;
+            margin-top: 12px; font-size: 18px; color: #2c3e50;
+            background: rgba(255,255,255,0.8); padding: 6px 18px; border-radius: 20px;
         }
 
         #raceScreen {
@@ -289,10 +311,20 @@
         .btn-reset { flex:1; padding:14px; font-size:16px; background:#e74c3c; color:white; border:none; border-radius:10px; cursor:pointer; min-width:140px; }
         .btn-reset:hover { background:#c0392b; }
         
+        @media (max-width: 1000px) {
+            .content-row { flex-direction: column; gap: 15px; }
+            .horse-decoration { font-size: 80px; }
+            .game-title { font-size: 42px; }
+        }
+        
         @media (max-width: 768px) {
-            .game-title { font-size: 48px; }
-            .rules-box ol { font-size: 18px; }
-            .iphone-note-text { font-size: 14px; }
+            .game-title { font-size: 38px; }
+            .horse-decoration { font-size: 60px; }
+            .rules-box { max-width: 100%; }
+            .rules-box h3 { font-size: 20px; }
+            .rules-box ol { font-size: 16px; }
+            .iphone-note-text { font-size: 12px; }
+            #startGameBtn { font-size: 24px; padding: 12px 40px; }
         }
     </style>
 </head>
@@ -309,15 +341,20 @@
 <div id="mainDisplay">
     <div id="startScreen">
         <h1 class="game-title">СОЛЛАЛЬ 2026<br>УРАЛЬСКИЕ СКАЧКИ</h1>
-        <div id="qrcodeContainer"></div>
-        <div class="rules-box">
-            <h3>Правила игры:</h3>
-            <ol>
-                <li>Отсканируй QR-код</li>
-                <li>Выбери свою команду</li>
-                <li>Играй — тряси телефон!</li>
-            </ol>
+        
+        <div class="content-row">
+            <div class="horse-decoration">🐴</div>
+            <div id="qrcodeContainer"></div>
+            <div class="rules-box">
+                <h3>Правила игры:</h3>
+                <ol>
+                    <li>Отсканируй QR-код</li>
+                    <li>Выбери свою команду</li>
+                    <li>Играй — тряси телефон!</li>
+                </ol>
+            </div>
         </div>
+        
         <div class="iphone-note">
             <div class="iphone-note-title">📱 Для пользователей iPhone:</div>
             <div class="iphone-note-text">
@@ -325,9 +362,11 @@
                 <strong>Настройки → Универсальный доступ → Touch → Встряхивание для отмены → ВЫКЛ</strong>
             </div>
         </div>
+        
         <button id="startGameBtn" disabled>СТАРТ</button>
         <div id="teamsCount">Зарегистрировано команд: <strong id="regCount">0</strong></div>
     </div>
+    
     <div id="raceScreen">
         <div class="race-tracks" id="raceTracks"></div>
         <div id="statsPanel"></div>
@@ -518,42 +557,32 @@ function isIOS(){return/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSS
 function requestMotionPermission(){
     console.log('Requesting motion permission...');
     if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
-        console.log('iOS 13+ detected');
+        console.log('iOS 13+ - requesting permission');
         DeviceMotionEvent.requestPermission()
             .then(function(response){
-                console.log('Permission:',response);
+                console.log('Permission response:',response);
                 if(response==='granted'){
                     motionPermissionGranted=true;
-                    console.log('✅ Permission granted');
+                    console.log('✅ Motion granted!');
                     startMotionDetection();
                 }else{
-                    console.error('❌ Permission denied');
-                    showMotionError();
+                    console.warn('⚠️ Permission denied - user can use button');
                 }
             })
             .catch(function(err){
-                console.error('Permission error:',err);
-                showMotionError();
+                console.error('Permission error:',err,'- user can use button');
             });
     }else if(window.DeviceMotionEvent){
-        console.log('Older iOS/Android');
+        console.log('Older iOS/Android - starting motion');
         motionPermissionGranted=true;
         startMotionDetection();
     }else{
-        console.error('Motion not supported');
-        alert('Датчик движения не поддерживается.\n\nИспользуйте кнопку ТРЯСИ!');
+        console.warn('Motion not supported - button still works');
     }
 }
 
-function showMotionError(){
-    alert('⚠️ Ошибка доступа к датчику движения.\n\n'+
-          '1. Обновите страницу\n'+
-          '2. Разрешите доступ к датчику\n\n'+
-          'Или используйте кнопку ТРЯСИ!');
-}
-
 function startMotionDetection(){
-    console.log('Starting motion...');
+    console.log('Starting motion detection...');
     
     if(isIOS()){
         document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
@@ -586,7 +615,7 @@ function startMotionDetection(){
         }
     });
     
-    console.log('✅ Motion active');
+    console.log('✅ Motion listener active');
 }
 
 setInterval(function(){if(!myPlayerId||!gameState||!gameState.players)return;var p=gameState.players[myPlayerId];if(p){var v=Math.min((p.shakeIntensity||0)*5,100);document.getElementById('intensityVal').textContent=Math.round(p.shakeIntensity||0);document.getElementById('intensityFill').style.width=v+'%';}if(myTeamId&&gameState.teams&&gameState.teams[myTeamId]){document.getElementById('activeCount').textContent=gameState.teams[myTeamId].players.length;}},150);
